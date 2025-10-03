@@ -14,7 +14,29 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests from Netlify (your deployed frontend)
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://helpful-selkie-ea71cc.netlify.app', // Replace with your actual Netlify URL
+      'https://problems-production.up.railway.app',
+      // Add your Netlify domain here when you get it
+    ];
+
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.some(allowed => origin.includes(allowed))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
