@@ -1,5 +1,16 @@
 {
+  "name": "problem-tracker",
+  "version": "1.0.0",
+  "description": "Full-stack Problem Tracker Application",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "dev": "cd backend && nodemon server.js"
+  },
   "dependencies": {
     "mongodb": "^6.20.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
