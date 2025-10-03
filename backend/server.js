@@ -13,15 +13,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
-// Middleware
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests from Netlify (your deployed frontend)
     const allowedOrigins = [
       'http://localhost:3000',
-      'https://helpful-selkie-ea71cc.netlify.app', // Replace with your actual Netlify URL
+      'https://helpful-selkie-ea71cc.netlify.app', // Your Netlify site
       'https://problems-production.up.railway.app',
-      // Add your Netlify domain here when you get it
     ];
 
     // Allow requests with no origin (mobile apps, etc.)
