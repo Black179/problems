@@ -43,8 +43,18 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+.then(() => {
+  console.log('✅ Connected to MongoDB');
+  // Initialize default admin after successful connection
+  mongoose.connection.once('open', () => {
+    createDefaultAdmin();
+  });
+})
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err);
+  console.error('Please check your MONGODB_URI environment variable');
+  process.exit(1); // Exit if MongoDB connection fails
+});
 
 // JWT Authentication middleware
 function authenticateToken(req, res, next) {
@@ -87,9 +97,15 @@ async function createDefaultAdmin() {
   }
 }
 
-// Initialize default admin
-mongoose.connection.once('open', () => {
-  createDefaultAdmin();
+// Health check endpoint
+app.get('/health', (req, res) => {
+  const health = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    environment: process.env.NODE_ENV || 'development'
+  };
+  res.json(health);
 });
 
 // Routes
