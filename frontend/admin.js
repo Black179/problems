@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verify token validity
     async function verifyToken(token) {
         try {
-            const response = await fetch('http://localhost:3000/api/admin/verify', {
+            const response = await fetch('https://problems-production.up.railway.app/api/admin/verify', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (filterStatus.value) params.append('status', filterStatus.value);
             params.append('sortBy', sortBy.value);
             
-            const response = await fetch(`http://localhost:3000/api/problems?${params.toString()}`, {
+            const response = await fetch(`https://problems-production.up.railway.app/api/problems?${params.toString()}`, {
                 headers: getAuthHeader()
             });
             
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleViewProblem(e) {
         const id = e.currentTarget.getAttribute('data-id');
         try {
-            const response = await fetch(`http://localhost:3000/api/problems/${id}`, {
+            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
                 headers: getAuthHeader()
             });
             
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = e.currentTarget.closest('tr');
         
         try {
-            const response = await fetch(`http://localhost:3000/api/problems/${id}`, {
+            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeader()
             });

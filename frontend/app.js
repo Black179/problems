@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     expectedOutcome: document.getElementById('expectedOutcome')?.value.trim() || ''
                 };
                 
-                const response = await fetch('http://localhost:3000/api/problems', {
+                const response = await fetch('https://problems-production.up.railway.app/api/problems', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
