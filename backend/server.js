@@ -159,12 +159,12 @@ app.post('/api/admin/create', async (req, res) => {
     console.log('🗑️ All existing admin users deleted');
 
     // Create new admin with bcrypt 10 rounds (for compatibility)
-    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
     const admin = new Admin({
       name: 'Administrator',
       email: 'admin',
-      password: hashedPassword
+      password: 'SecureAdmin@2025'
     });
+    
 
     await admin.save();
     console.log('✅ Fresh admin user created');
