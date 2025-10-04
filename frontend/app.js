@@ -6,14 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Reset form validation
-            form.classList.add('was-validated');
-            
-            if (!form.checkValidity()) {
-                e.stopPropagation();
-                return;
-            }
-            
             try {
                 const problemData = {
                     name: document.getElementById('name').value.trim(),
@@ -28,7 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     expectedOutcome: document.getElementById('expectedOutcome')?.value.trim() || ''
                 };
                 
-                const response = await fetch('https://helpful-selkie-ea71cc.netlify.app/.netlify/functions/server?action=submit_problem', {
+                // Basic validation for required fields
+                if (!problemData.name || !problemData.contactNo || !problemData.problem) {
+                    alert('Please fill in all required fields: Name, Contact Number, and Problem Description');
+                    return;
+                }
+                
+                const response = await fetch('https://problems-production.up.railway.app/api/problems', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -37,8 +35,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to submit problem');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
                 }
+                
+                const result = await response.json();
                 
                 // Show success message and reset form
                 successMessage.classList.remove('d-none');
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred while submitting the form. Please try again.');
+                alert(`Error: ${error.message}`);
             }
         });
     }
