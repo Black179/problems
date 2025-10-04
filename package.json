@@ -6,7 +6,7 @@
   "scripts": {
     "start": "cd backend && node server.js",
     "dev": "cd backend && nodemon server.js",
-    "install-backend": "cd backend && npm install"
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "express": "^4.18.2",
