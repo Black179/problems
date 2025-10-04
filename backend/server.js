@@ -175,9 +175,13 @@ app.post('/api/admin/login', async (req, res) => {
     console.log('📧 Admin email:', admin.email);
     console.log('🔑 Password length:', password.length);
     console.log('🔑 Stored hash length:', admin.password.length);
+    console.log('🔑 Password (first 5 chars):', password.substring(0, 5) + '...');
+    console.log('🔑 Stored hash (first 10 chars):', admin.password.substring(0, 10) + '...');
 
     const validPassword = await bcrypt.compare(password, admin.password);
     console.log('🔐 Password valid:', validPassword);
+    console.log('🔐 Password === "SecureAdmin@2025":', password === 'SecureAdmin@2025');
+    console.log('🔐 Password length === 16:', password.length === 16);
 
     if (!validPassword) {
       console.log('❌ Invalid password provided');
