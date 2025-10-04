@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     expectedOutcome: document.getElementById('expectedOutcome')?.value.trim() || ''
                 };
                 
-                const response = await fetch('https://problems-production.up.railway.app/api/problems', {
+                const response = await fetch('https://helpful-selkie-ea71cc.netlify.app/.netlify/functions/server?action=submit_problem', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
