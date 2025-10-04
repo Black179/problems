@@ -133,12 +133,15 @@ async function createDefaultAdmin() {
 
 // Initialize database connection and admin
 let dbConnected = false;
-connectDB().then(connected => {
+connectDB().then(async (connected) => {
   dbConnected = connected;
   if (connected) {
-    setTimeout(() => {
-      createDefaultAdmin();
-    }, 1000);
+    const existing = await Admin.findOne({ email: 'admin' });
+    if (!existing) {
+      await createDefaultAdmin();
+    } else {
+      console.log('✅ Admin already exists, skipping creation');
+    }
   }
 });
 
@@ -179,6 +182,7 @@ app.post('/api/admin/create', async (req, res) => {
     res.status(500).json({ error: 'Failed to create admin' });
   }
 });
+console.log("🔐 Hashed password created:", hashedPassword);
 
 // Check database status and admin user
 app.get('/api/admin/debug', async (req, res) => {
