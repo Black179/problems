@@ -123,32 +123,108 @@ connectDB().then(connected => {
   }
 });
 
-// API Routes
-
-// Admin login
-app.post('/api/admin/login', async (req, res) => {
+// Manual admin creation endpoint (for debugging)
+app.post('/api/admin/create', async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
+    console.log('🔄 Manual admin creation requested');
 
     if (!dbConnected) {
       return res.status(500).json({ error: 'Database not available' });
     }
 
+    // Delete existing admin
+    await Admin.deleteMany({ email: 'admin' });
+    console.log('🗑️ Existing admin user deleted');
+
+    // Create new admin
+    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
+    const admin = new Admin({
+      name: 'Administrator',
+      email: 'admin',
+      password: hashedPassword
+    });
+
+    await admin.save();
+    console.log('✅ New admin user created fresh');
+    console.log('Email: admin');
+    console.log('Password: SecureAdmin@2025');
+
+    res.json({
+      message: 'Admin user created successfully',
+      email: 'admin',
+      password: 'SecureAdmin@2025'
+    });
+  } catch (error) {
+    console.error('❌ Error creating admin:', error);
+    res.status(500).json({ error: 'Failed to create admin' });
+  }
+});
+
+// Check database status and admin user
+app.get('/api/admin/debug', async (req, res) => {
+  try {
+    if (!dbConnected) {
+      return res.json({
+        database: 'disconnected',
+        adminExists: false,
+        message: 'Database not connected'
+      });
+    }
+
+    const admin = await Admin.findOne({ email: 'admin' });
+
+    res.json({
+      database: 'connected',
+      adminExists: !!admin,
+      adminEmail: admin ? admin.email : null,
+      message: admin ? 'Admin user exists' : 'Admin user not found'
+    });
+  } catch (error) {
+    console.error('❌ Debug error:', error);
+    res.status(500).json({ error: 'Debug check failed' });
+  }
+});
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log('🔐 Admin login attempt for email:', email);
+
+    if (!email || !password) {
+      console.log('❌ Missing email or password');
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (!dbConnected) {
+      console.log('❌ Database not connected');
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    console.log('🔍 Looking for admin user in database...');
     const admin = await Admin.findOne({ email });
+    console.log('📧 Admin found:', !!admin);
 
     if (!admin) {
+      console.log('❌ Admin user not found in database');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    console.log('✅ Admin user found, checking password...');
+    console.log('📧 Admin email:', admin.email);
+    console.log('🔑 Password length:', password.length);
+    console.log('🔑 Stored hash length:', admin.password.length);
+    console.log('🔑 Password (first 5 chars):', password.substring(0, 5) + '...');
+    console.log('🔑 Stored hash (first 10 chars):', admin.password.substring(0, 10) + '...');
 
     const validPassword = await bcrypt.compare(password, admin.password);
+    console.log('🔐 Password valid:', validPassword);
 
     if (!validPassword) {
+      console.log('❌ Invalid password provided');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    console.log('✅ Password correct, generating JWT token...');
 
     // Generate JWT token
     const token = jwt.sign(
@@ -157,6 +233,7 @@ app.post('/api/admin/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('✅ Login successful, token generated');
     res.json({
       message: 'Login successful',
       token,
