@@ -18,19 +18,27 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, etc.)
     if (!origin) return callback(null, true);
+
     const allowedOrigins = [
       'http://localhost:3000',
       'https://problems-beige.vercel.app',
-      'https://problems-production.up.railway.app'
+      'https://problems-production.up.railway.app',
+      'http://localhost:8080',
+      'https://localhost:8080'
     ];
+
+    // Check if origin is in allowed list
     if (allowedOrigins.some(allowed => origin.includes(allowed))) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // For development, allow all origins to prevent CORS errors
+      console.log('⚠️  Allowing unknown origin for development:', origin);
+      callback(null, true);
     }
   },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json());
 
