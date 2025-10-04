@@ -18,8 +18,7 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',
       'https://problems-production.up.railway.app',
-      // Vercel deployments - add your specific domain when you get it
-      'https://your-project.vercel.app', // Replace with your actual Vercel URL
+      'https://problems-beige.vercel.app', // Your Vercel site
     ];
 
     // Allow requests with no origin (mobile apps, etc.)
