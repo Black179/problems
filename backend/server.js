@@ -5,10 +5,6 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// Disable mongoose buffering to prevent hanging
-mongoose.set('bufferCommands', false);
-mongoose.set('bufferMaxEntries', 0);
-
 // Simple CORS setup
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -45,8 +41,7 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 3000,
       socketTimeoutMS: 5000,
-      bufferCommands: false,
-      bufferMaxEntries: 0,
+      // Removed invalid buffer options
     });
     console.log('✅ MongoDB connected');
   } catch (error) {
