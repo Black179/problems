@@ -224,6 +224,7 @@ async function verifyToken(event, context) {
     };
   }
 }
+
 // Submit a new problem
 async function submitProblem(event, context) {
   return new Promise((resolve, reject) => {
@@ -398,9 +399,74 @@ async function getProblem(event, context) {
 
   return new Promise((resolve, reject) => {
     const { id } = event.queryStringParameters || {};
+    const sql = 'SELECT * FROM problems WHERE id = ?';
+
+    db.get(sql, [id], (err, row) => {
+      if (err) {
+        console.error('Error fetching problem:', err);
+        return resolve({
+          statusCode: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+          },
+          body: JSON.stringify({ error: 'Server error' })
+        });
+      }
+
+      if (!row) {
+        return resolve({
+          statusCode: 404,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+          },
+          body: JSON.stringify({ error: 'Problem not found' })
+        });
+      }
+
+      resolve({
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+        },
+        body: JSON.stringify(row)
+      });
+    });
+  });
+}
+
+// Delete a problem (protected - requires authentication)
+async function deleteProblem(event, context) {
+  try {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+    await authenticateToken(token);
+  } catch (error) {
+    return {
+      statusCode: 401,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+      },
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+
+  return new Promise((resolve, reject) => {
+    const { id } = event.queryStringParameters || {};
     const sql = 'DELETE FROM problems WHERE id = ?';
 
-    db.run(sql, [id], (err) => {
+    db.run(sql, [id], function(err) {
       if (err) {
         console.error('Error deleting problem:', err);
         return resolve({
@@ -415,7 +481,7 @@ async function getProblem(event, context) {
         });
       }
 
-      if (!row) {
+      if (this.changes === 0) {
         return resolve({
           statusCode: 404,
           headers: {
@@ -460,8 +526,6 @@ exports.handler = async (event, context) => {
       body: ''
     };
   }
-
-  const pathSegments = event.path.replace('/.netlify/functions/server', '').split('/').filter(Boolean);
 
   try {
     const queryParams = event.queryStringParameters || {};
