@@ -491,6 +491,85 @@ async function deleteProblem(event, context) {
   });
 }
 
+// Submit a new problem (public - no authentication required)
+async function submitProblem(event, context) {
+  return new Promise((resolve, reject) => {
+    const { name, contactNo, status, problem, field, problemType, urgency, whenStarted, solutionsTried, expectedOutcome } = JSON.parse(event.body);
+
+    // Validation
+    if (!name || !contactNo || !status || !problem || !field) {
+      return resolve({
+        statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+        },
+        body: JSON.stringify({ error: 'All required fields must be filled' })
+      });
+    }
+
+    if (!['Working', 'Student', 'Neither'].includes(status)) {
+      return resolve({
+        statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+        },
+        body: JSON.stringify({ error: 'Invalid status value' })
+      });
+    }
+
+    const sql = `INSERT INTO problems (name, contactNo, status, field, problemType, urgency, problem, whenStarted, solutionsTried, expectedOutcome) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [name, contactNo, status, field, problemType, urgency, problem, whenStarted, solutionsTried, expectedOutcome], function(err) {
+      if (err) {
+        console.error('Error inserting problem:', err);
+        return resolve({
+          statusCode: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+          },
+          body: JSON.stringify({ error: 'Server error' })
+        });
+      }
+
+      resolve({
+        statusCode: 201,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+        },
+        body: JSON.stringify({
+          message: 'Problem submitted successfully',
+          data: {
+            id: this.lastID,
+            name,
+            contactNo,
+            status,
+            field,
+            problemType,
+            urgency,
+            problem,
+            whenStarted,
+            solutionsTried,
+            expectedOutcome,
+            createdAt: new Date().toISOString()
+          }
+        })
+      });
+    });
+  });
+}
+
 // Main handler function for Netlify Functions
 exports.handler = async (event, context) => {
   // Enable CORS
@@ -536,6 +615,10 @@ exports.handler = async (event, context) => {
 
     if (event.httpMethod === 'DELETE' && queryParams.action === 'delete_problem' && queryParams.id) {
       return await deleteProblem(event, context);
+    }
+
+    if (event.httpMethod === 'POST' && body.action === 'submit_problem') {
+      return await submitProblem(event, context);
     }
 
     return {
