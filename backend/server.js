@@ -5,7 +5,6 @@ const cors = require('cors');
 const morgan = require('morgan');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const problemRoutes = require('./routes/problems');
 const Problem = require('./models/Problem');
 const Admin = require('./models/Admin');
 
@@ -161,17 +160,25 @@ app.get('/api/admin/verify', authenticateToken, (req, res) => {
 // Submit a new problem (public - no authentication required)
 app.post('/api/problems', async (req, res) => {
   try {
+    console.log('📥 Received problem submission request');
+    console.log('📋 Request body:', JSON.stringify(req.body, null, 2));
+
     const { name, contactNo, status, problem, field, problemType, urgency, whenStarted, solutionsTried, expectedOutcome } = req.body;
 
     // Validation - Only name, contact, and problem are required
     if (!name || !contactNo || !problem) {
-      return res.status(400).json({ error: 'Name, contact number, and problem description are required' });
+      console.log('❌ Validation failed - missing required fields');
+      return res.status(400).json({
+        error: 'Name, contact number, and problem description are required',
+        received: { name: !!name, contactNo: !!contactNo, problem: !!problem }
+      });
     }
 
+    console.log('✅ Validation passed, creating problem object');
     const newProblem = new Problem({
       name,
       contactNo,
-      status: status || 'Neither', // Default to 'Neither' if not provided
+      status: status || 'Neither',
       problem,
       field: field || '',
       problemType: problemType || '',
@@ -190,8 +197,12 @@ app.post('/api/problems', async (req, res) => {
       data: savedProblem
     });
   } catch (error) {
-    console.error('Error submitting problem:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error submitting problem:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Server error',
+      details: error.message
+    });
   }
 });
 
