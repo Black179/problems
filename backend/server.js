@@ -182,7 +182,6 @@ app.post('/api/admin/create', async (req, res) => {
     res.status(500).json({ error: 'Failed to create admin' });
   }
 });
-console.log("🔐 Hashed password created:", hashedPassword);
 
 // Check database status and admin user
 app.get('/api/admin/debug', async (req, res) => {
