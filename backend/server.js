@@ -110,6 +110,24 @@ app.get('/health', (req, res) => {
   res.json(health);
 });
 
+// Initialize default admin
+mongoose.connection.once('open', () => {
+  console.log('🔗 MongoDB connection opened, initializing admin...');
+  createDefaultAdmin();
+});
+
+// Manual admin creation endpoint (for debugging)
+app.post('/api/admin/create', async (req, res) => {
+  try {
+    console.log('🔧 Manual admin creation requested');
+    await createDefaultAdmin();
+    res.json({ message: 'Admin creation attempted. Check server logs.' });
+  } catch (error) {
+    console.error('Error in manual admin creation:', error);
+    res.status(500).json({ error: 'Failed to create admin' });
+  }
+});
+
 // Routes
 
 // Admin login
