@@ -617,7 +617,7 @@ exports.handler = async (event, context) => {
       return await deleteProblem(event, context);
     }
 
-    if (event.httpMethod === 'POST' && body.action === 'submit_problem') {
+    if (event.httpMethod === 'POST' && queryParams.action === 'submit_problem') {
       return await submitProblem(event, context);
     }
 
