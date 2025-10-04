@@ -120,17 +120,31 @@ app.post('/api/admin/create', async (req, res) => {
 // Submit a new problem (public)
 app.post('/api/problems', async (req, res) => {
   try {
-    const { name, contactNo, problem, status = 'Neither', field = '', problemType = '', urgency = '', whenStarted = '', solutionsTried = '', expectedOutcome = '' } = req.body;
+    const { name, contactNo, problem, status, field = '', problemType = '', urgency = '', whenStarted = '', solutionsTried = '', expectedOutcome = '' } = req.body;
 
-    if (!name || !contactNo || !problem)
-      return res.status(400).json({ error: 'Name, contactNo, and problem are required' });
+    // Validation - Only name, contact, and problem are required
+    if (!name || !contactNo || !problem) {
+      return res.status(400).json({ error: 'Name, contact number, and problem description are required' });
+    }
+
+    // Ensure status has a valid value, default to 'Neither' if empty or invalid
+    const validStatus = (status && ['Working', 'Student', 'Neither'].includes(status)) ? status : 'Neither';
 
     const newProblem = new Problem({
-      name, contactNo, problem, status, field, problemType, urgency, whenStarted, solutionsTried, expectedOutcome
+      name,
+      contactNo,
+      status: validStatus,
+      problem,
+      field,
+      problemType,
+      urgency,
+      whenStarted,
+      solutionsTried,
+      expectedOutcome
     });
 
     const saved = await newProblem.save();
-    res.status(201).json({ message: 'Problem submitted', data: saved });
+    res.status(201).json({ message: 'Problem submitted successfully', data: saved });
   } catch (err) {
     console.error('❌ Error submitting problem:', err);
     res.status(500).json({ error: 'Server error' });
