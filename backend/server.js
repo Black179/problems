@@ -45,6 +45,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => {
   console.log('✅ Connected to MongoDB');
+  console.log('📊 Database:', mongoose.connection.name);
+  console.log('🔗 Host:', mongoose.connection.host);
+
   // Initialize default admin after successful connection
   mongoose.connection.once('open', () => {
     createDefaultAdmin();
@@ -182,7 +185,9 @@ app.post('/api/problems', async (req, res) => {
       expectedOutcome
     });
 
+    console.log('💾 Saving problem to database:', newProblem.name);
     const savedProblem = await newProblem.save();
+    console.log('✅ Problem saved successfully with ID:', savedProblem._id);
 
     res.status(201).json({
       message: 'Problem submitted successfully',
@@ -190,6 +195,42 @@ app.post('/api/problems', async (req, res) => {
     });
   } catch (error) {
     console.error('Error submitting problem:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get problems count (for debugging data persistence)
+app.get('/api/problems/count', authenticateToken, async (req, res) => {
+  try {
+    const count = await Problem.countDocuments();
+    console.log('📊 Total problems in database:', count);
+
+    res.json({
+      count,
+      message: `Found ${count} problems in database`
+    });
+  } catch (error) {
+    console.error('Error counting problems:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get recent problems (for debugging)
+app.get('/api/problems/recent', authenticateToken, async (req, res) => {
+  try {
+    const recentProblems = await Problem.find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('name field createdAt');
+
+    console.log('🔍 Recent problems:', recentProblems.length);
+
+    res.json({
+      count: recentProblems.length,
+      data: recentProblems
+    });
+  } catch (error) {
+    console.error('Error fetching recent problems:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
