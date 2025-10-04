@@ -14,11 +14,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-i
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests from Netlify (your deployed frontend)
+    // Allow requests from Vercel (your deployed frontend)
     const allowedOrigins = [
       'http://localhost:3000',
-      'https://helpful-selkie-ea71cc.netlify.app', // Your Netlify site
       'https://problems-production.up.railway.app',
+      // Vercel deployments - add your specific domain when you get it
+      'https://your-project.vercel.app', // Replace with your actual Vercel URL
     ];
 
     // Allow requests with no origin (mobile apps, etc.)
