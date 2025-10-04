@@ -409,12 +409,9 @@ process.on('SIGTERM', () => {
   server.close(() => {
     console.log('✅ Server closed');
     if (dbConnected) {
-      mongoose.connection.close(() => {
-        console.log('✅ Database connection closed');
-        process.exit(0);
-      });
-    } else {
-      process.exit(0);
+      mongoose.connection.close();
+      console.log('✅ Database connection closed');
     }
+    process.exit(0);
   });
 });
