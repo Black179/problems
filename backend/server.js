@@ -403,7 +403,7 @@ const server = app.listen(PORT, () => {
   }
 });
 
-// Graceful shutdown
+// Graceful shutdown - Fixed for Mongoose 6+
 process.on('SIGTERM', () => {
   console.log('🛑 Shutting down gracefully');
   server.close(() => {
