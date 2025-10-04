@@ -397,12 +397,12 @@ async function getProblem(event, context) {
   }
 
   return new Promise((resolve, reject) => {
-    const { id } = event.pathParameters;
-    const sql = 'SELECT * FROM problems WHERE id = ?';
+    const { id } = event.queryStringParameters || {};
+    const sql = 'DELETE FROM problems WHERE id = ?';
 
-    db.get(sql, [id], (err, row) => {
+    db.run(sql, [id], (err) => {
       if (err) {
-        console.error('Error fetching problem:', err);
+        console.error('Error deleting problem:', err);
         return resolve({
           statusCode: 500,
           headers: {
@@ -436,119 +436,74 @@ async function getProblem(event, context) {
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
         },
-        body: JSON.stringify(row)
-      });
-    });
-  });
-}
-
-// Delete a problem (protected - requires authentication)
-async function deleteProblem(event, context) {
-  try {
-    const authHeader = event.headers?.authorization || event.headers?.Authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-    await authenticateToken(token);
-  } catch (error) {
-    return {
-      statusCode: 401,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-      },
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-
-  return new Promise((resolve, reject) => {
-    const { id } = event.pathParameters;
-    const sql = 'DELETE FROM problems WHERE id = ?';
-
-    db.run(sql, [id], function(err) {
-      if (err) {
-        console.error('Error deleting problem:', err);
-        return resolve({
-          statusCode: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-          },
-          body: JSON.stringify({ error: 'Server error' })
-        });
-      }
-
-      if (this.changes === 0) {
-        return resolve({
-          statusCode: 404,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-          },
-          body: JSON.stringify({ error: 'Problem not found' })
-        });
-      }
-
-      resolve({
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-        },
         body: JSON.stringify({ message: 'Problem deleted successfully' })
       });
     });
   });
 }
-async function getProblems(event, context) {
-  return new Promise((resolve, reject) => {
-    const { field, status, sortBy = 'createdAt', sortOrder = 'desc' } = event.queryStringParameters || {};
 
-    let sql = 'SELECT * FROM problems WHERE 1=1';
-    const params = [];
-
-    if (field) {
-      sql += ' AND field = ?';
-      params.push(field);
-    }
-
-    if (status) {
-      sql += ' AND status = ?';
-      params.push(status);
-    }
-
-    // Sanitize sortBy to prevent SQL injection
-    const validSortColumns = ['createdAt', 'name', 'field', 'status'];
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'createdAt';
-    const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-
-    sql += ` ORDER BY ${sortColumn} ${order}`;
-
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        console.error('Error fetching problems:', err);
-  }
-
-  if (event.httpMethod === 'GET' && pathSegments.length === 3 && pathSegments[1] === 'problems') {
-    return await getProblem(event, context);
-  }
-
-  if (event.httpMethod === 'DELETE' && pathSegments.length === 3 && pathSegments[1] === 'problems') {
-    return await deleteProblem(event, context);
-  }
-
-  return {
-    statusCode: 404,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({ error: 'Not found' })
+// Main handler function for Netlify Functions
+exports.handler = async (event, context) => {
+  // Enable CORS
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
   };
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
+  const pathSegments = event.path.replace('/.netlify/functions/server', '').split('/').filter(Boolean);
+
+  try {
+    const queryParams = event.queryStringParameters || {};
+    const body = event.body ? JSON.parse(event.body) : {};
+
+    // Route based on action in request body/query or HTTP method
+    if ((event.httpMethod === 'POST' && body.action === 'admin_login') || (event.httpMethod === 'POST' && body.email && body.password)) {
+      return await adminLogin(event, context);
+    }
+
+    if (event.httpMethod === 'GET' && queryParams.action === 'verify_token') {
+      return await verifyToken(event, context);
+    }
+
+    if (event.httpMethod === 'POST' && body.action === 'submit_problem') {
+      return await submitProblem(event, context);
+    }
+
+    if (event.httpMethod === 'GET' && queryParams.action === 'get_problems') {
+      return await getProblems(event, context);
+    }
+
+    if (event.httpMethod === 'GET' && queryParams.action === 'get_problem' && queryParams.id) {
+      return await getProblem(event, context);
+    }
+
+    if (event.httpMethod === 'DELETE' && queryParams.action === 'delete_problem' && queryParams.id) {
+      return await deleteProblem(event, context);
+    }
+
+    return {
+      statusCode: 404,
+      headers,
+      body: JSON.stringify({ error: 'Not found' })
+    };
+
+  } catch (error) {
+    console.error('Server error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Server error' })
+    };
+  }
 };

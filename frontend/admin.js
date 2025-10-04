@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verify token validity
     async function verifyToken(token) {
         try {
-            const response = await fetch('https://problems-production.up.railway.app/api/admin/verify', {
+            const response = await fetch('https://helpful-selkie-ea71cc.netlify.app/.netlify/functions/server?action=verify_token', {
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -73,8 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (filterField.value) params.append('field', filterField.value);
             if (filterStatus.value) params.append('status', filterStatus.value);
             params.append('sortBy', sortBy.value);
+            params.append('action', 'get_problems');
             
-            const response = await fetch(`https://problems-production.up.railway.app/api/problems?${params.toString()}`, {
+            const response = await fetch(`https://helpful-selkie-ea71cc.netlify.app/.netlify/functions/server?${params.toString()}`, {
                 headers: getAuthHeader()
             });
             
@@ -249,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleViewProblem(e) {
         const id = e.currentTarget.getAttribute('data-id');
         try {
-            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
+            const response = await fetch(`https://helpful-selkie-ea71cc.netlify.app/.netlify/functions/server?action=get_problem&id=${id}`, {
                 headers: getAuthHeader()
             });
             
@@ -362,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = e.currentTarget.closest('tr');
         
         try {
-            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
+            const response = await fetch(`https://helpful-selkie-ea71cc.netlify.app/.netlify/functions/server?action=delete_problem&id=${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
