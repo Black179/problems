@@ -84,8 +84,6 @@ async function createDefaultAdmin() {
       const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
       const admin = new Admin({
         name: 'Administrator',
-        email: 'admin',
-        password: hashedPassword
       });
       await admin.save();
       console.log('Default admin user created');
@@ -96,65 +94,13 @@ async function createDefaultAdmin() {
     }
   } catch (error) {
     console.error('Error creating default admin:', error);
+    console.error('Error stack:', error.stack);
   }
 }
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  const health = {
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    environment: process.env.NODE_ENV || 'development'
-  };
-  res.json(health);
-});
-
-// Initialize default admin
-mongoose.connection.once('open', () => {
-  console.log('🔗 MongoDB connection opened, initializing admin...');
-  createDefaultAdmin();
-});
-
-// Manual admin recreation endpoint (deletes and recreates admin)
-app.post('/api/admin/recreate', async (req, res) => {
-  try {
-    console.log('🔄 Manual admin recreation requested');
-
-    // Delete existing admin
-    await Admin.deleteMany({ email: 'admin' });
-    console.log('🗑️ Existing admin user deleted');
-
-    // Create new admin
-    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
-    const admin = new Admin({
-      name: 'Administrator',
-      email: 'admin',
-      password: hashedPassword
-    });
-
-    await admin.save();
-    console.log('✅ New admin user created fresh');
-    console.log('Email: admin');
-    console.log('Password: SecureAdmin@2025');
-
-    res.json({
-      message: 'Admin user recreated successfully',
-      email: 'admin',
-      password: 'SecureAdmin@2025'
-    });
-  } catch (error) {
-    console.error('Error recreating admin:', error);
-    res.status(500).json({ error: 'Failed to recreate admin' });
-  }
-});
-
-// Routes
 
 // Admin login
 app.post('/api/admin/login', async (req, res) => {
   const { email, password } = req.body;
-
   console.log('🔐 Admin login attempt for email:', email);
 
   if (!email || !password) {
