@@ -4,89 +4,29 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 // Initialize SQLite database
-const dbPath = path.join(__dirname, '..', 'backend', 'problems.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
-    console.log('Connected to SQLite database');
-    createTables();
-  }
-});
+// For Netlify Functions, use in-memory database with hardcoded admin for demo
+let db;
+let dbInitialized = false;
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
-
-// Create tables if they don't exist
-function createTables() {
-  const problemsTable = `
-    CREATE TABLE IF NOT EXISTS problems (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      contactNo TEXT NOT NULL,
-      status TEXT NOT NULL CHECK(status IN ('Working', 'Student', 'Neither')),
-      field TEXT NOT NULL,
-      problemType TEXT,
-      urgency TEXT,
-      problem TEXT NOT NULL,
-      whenStarted TEXT,
-      solutionsTried TEXT,
-      expectedOutcome TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `;
-
-  const adminsTable = `
-    CREATE TABLE IF NOT EXISTS admins (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `;
-
-  db.run(problemsTable, (err) => {
-    if (err) {
-      console.error('Error creating problems table:', err);
-    } else {
-      console.log('Problems table ready');
-    }
-  });
-
-  db.run(adminsTable, (err) => {
-    if (err) {
-      console.error('Error creating admins table:', err);
-    } else {
-      console.log('Admins table ready');
-      // Create default admin if not exists
-      createDefaultAdmin();
-    }
-  });
-}
-
-// Create default admin user
-function createDefaultAdmin() {
-  const email = 'naveen@problemtracker.com';
-  const password = 'N@veeN';
-  const name = 'Administrator';
-
-  db.get('SELECT * FROM admins WHERE email = ?', [email], async (err, row) => {
-    if (err) {
-      console.error('Error checking admin:', err);
+function initializeDatabase() {
+  return new Promise((resolve, reject) => {
+    if (dbInitialized) {
+      resolve();
       return;
     }
 
-    if (!row) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      db.run('INSERT INTO admins (email, password, name) VALUES (?, ?, ?)', [email, hashedPassword, name], (err) => {
-        if (err) {
-          console.error('Error creating default admin:', err);
-        } else {
-          console.log('✅ Admin account created successfully!');
-        }
-      });
-    }
+    db = new sqlite3.Database(':memory:', (err) => {
+      if (err) {
+        console.error('Error opening in-memory database:', err);
+        return;
+      }
+
+      console.log('Connected to in-memory SQLite database');
+      createTables().then(() => {
+        dbInitialized = true;
+        resolve();
+      }).catch(reject);
+    });
   });
 }
 
@@ -528,6 +468,9 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Initialize database if not already done
+    await initializeDatabase();
+
     const queryParams = event.queryStringParameters || {};
     const body = event.body ? JSON.parse(event.body) : {};
 
