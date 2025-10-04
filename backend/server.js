@@ -36,13 +36,15 @@ app.use(express.json());
 
 // Health check endpoints (for monitoring)
 app.get('/health', (req, res) => {
-  res.json({
+  res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    version: '1.0.0'
   });
 });
 
+// Railway specific health check endpoint
 app.get('/railway/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -50,9 +52,13 @@ app.get('/railway/health', (req, res) => {
   });
 });
 
-// Basic route
+// Root endpoint for Railway
 app.get('/', (req, res) => {
-  res.json({ message: 'Problem Tracker API - Full functionality restored!' });
+  res.status(200).json({
+    message: 'Problem Tracker API',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Connect to MongoDB with optimized settings
@@ -391,15 +397,21 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
+// Start server immediately - no blocking operations
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`⏱️  Startup time: ${process.uptime()}s`);
   console.log('🔗 Health check: /health');
   console.log('🔗 Railway health: /railway/health');
+  console.log('🔗 Root: /');
 
+  // Signal that server is ready (for Railway)
   if (process.env.RAILWAY_ENVIRONMENT) {
     console.log('✅ Railway deployment ready');
+    // Ensure all endpoints are registered before signaling ready
+    setTimeout(() => {
+      console.log('✅ All endpoints registered and ready');
+    }, 100);
   }
 });
 
