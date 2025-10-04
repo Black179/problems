@@ -232,12 +232,19 @@ app.post('/api/admin/login', async (req, res) => {
     console.log('✅ Admin user found, checking password...');
     console.log('📧 Admin email:', admin.email);
     console.log('🔑 Password length:', password.length);
+    console.log('🔑 Password type:', typeof password);
+    console.log('🔑 Password encoding check:', Buffer.from(password).toString('utf8'));
     console.log('🔑 Stored hash length:', admin.password.length);
     console.log('🔑 Password (first 5 chars):', password.substring(0, 5) + '...');
     console.log('🔑 Stored hash (first 10 chars):', admin.password.substring(0, 10) + '...');
+    console.log('🔑 Password === "SecureAdmin@2025":', password === 'SecureAdmin@2025');
+    console.log('🔑 Password length === 16:', password.length === 16);
 
+    // Additional debugging for bcrypt comparison
+    console.log('🔍 Starting bcrypt comparison...');
     const validPassword = await bcrypt.compare(password, admin.password);
-    console.log('🔐 Password valid:', validPassword);
+    console.log('🔐 bcrypt.compare result:', validPassword);
+    console.log('🔐 Password validation completed');
 
     if (!validPassword) {
       console.log('❌ Invalid password provided');
