@@ -1,32 +1,48 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+// Import models
+const Admin = require('./models/Admin');
+const Problem = require('./models/Problem');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this';
 
-// Minimal CORS - just allow everything
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', '*');
-  res.header('Access-Control-Allow-Headers', '*');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
-
+// Middleware
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://problems-beige.vercel.app',
+      'https://problems-production.up.railway.app'
+    ];
+    if (allowedOrigins.some(allowed => origin.includes(allowed))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Immediate response health check
+// Health check endpoints (for monitoring)
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString()
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
 
-// Railway specific health check
 app.get('/railway/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -34,31 +50,294 @@ app.get('/railway/health', (req, res) => {
   });
 });
 
-// Basic API response
+// Basic route
 app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'API is running',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ message: 'Problem Tracker API - Full functionality restored!' });
 });
 
-// Catch-all for any other routes
-app.use('*', (req, res) => {
-  res.status(200).json({
-    message: 'API endpoint',
-    timestamp: new Date().toISOString()
+// Connect to MongoDB with optimized settings
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/test', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+    });
+    console.log('✅ MongoDB connected successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    console.log('🚨 Running without database');
+    return false;
+  }
+};
+
+// Authentication middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token.' });
+    }
+    req.user = user;
+    next();
   });
+}
+
+// Create default admin user
+async function createDefaultAdmin() {
+  try {
+    const existingAdmin = await Admin.findOne({ email: 'admin' });
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
+      const admin = new Admin({
+        name: 'Administrator',
+        email: 'admin',
+        password: hashedPassword
+      });
+      await admin.save();
+      console.log('✅ Default admin user created');
+      console.log('Email: admin');
+      console.log('Password: SecureAdmin@2025');
+    }
+  } catch (error) {
+    console.error('❌ Error creating default admin:', error.message);
+  }
+}
+
+// Initialize database connection and admin
+let dbConnected = false;
+connectDB().then(connected => {
+  dbConnected = connected;
+  if (connected) {
+    setTimeout(() => {
+      createDefaultAdmin();
+    }, 1000);
+  }
 });
 
-// Start server immediately
+// API Routes
+
+// Admin login
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (!dbConnected) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const validPassword = await bcrypt.compare(password, admin.password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, name: admin.name },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      email: admin.email,
+      name: admin.name
+    });
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Verify token
+app.get('/api/admin/verify', authenticateToken, (req, res) => {
+  res.json({ valid: true, email: req.user.email, name: req.user.name });
+});
+
+// Submit a new problem (public - no authentication required)
+app.post('/api/problems', async (req, res) => {
+  try {
+    if (!dbConnected) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const { name, contactNo, status, problem, field, problemType, urgency, whenStarted, solutionsTried, expectedOutcome } = req.body;
+
+    // Validation - Only name, contact, and problem are required
+    if (!name || !contactNo || !problem) {
+      return res.status(400).json({
+        error: 'Name, contact number, and problem description are required',
+        received: { name: !!name, contactNo: !!contactNo, problem: !!problem }
+      });
+    }
+
+    const newProblem = new Problem({
+      name,
+      contactNo,
+      status: status || 'Neither',
+      problem,
+      field: field || '',
+      problemType: problemType || '',
+      urgency: urgency || '',
+      whenStarted: whenStarted || '',
+      solutionsTried: solutionsTried || '',
+      expectedOutcome: expectedOutcome || ''
+    });
+
+    const savedProblem = await newProblem.save();
+
+    res.status(201).json({
+      message: 'Problem submitted successfully',
+      data: savedProblem
+    });
+  } catch (error) {
+    console.error('❌ Error submitting problem:', error);
+    res.status(500).json({
+      error: 'Server error',
+      details: error.message
+    });
+  }
+});
+
+// Get problems with filtering and sorting (protected)
+app.get('/api/problems', authenticateToken, async (req, res) => {
+  try {
+    if (!dbConnected) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const { field, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+
+    // Build query
+    const query = {};
+    if (field) query.field = field;
+    if (status) query.status = status;
+
+    // Build sort
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    const problems = await Problem.find(query).sort(sort);
+
+    res.json({
+      count: problems.length,
+      data: problems
+    });
+  } catch (error) {
+    console.error('❌ Error fetching problems:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a single problem by ID (protected)
+app.get('/api/problems/:id', authenticateToken, async (req, res) => {
+  try {
+    if (!dbConnected) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const problem = await Problem.findById(req.params.id);
+
+    if (!problem) {
+      return res.status(404).json({ error: 'Problem not found' });
+    }
+
+    res.json(problem);
+  } catch (error) {
+    console.error('❌ Error fetching problem:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete a problem (protected)
+app.delete('/api/problems/:id', authenticateToken, async (req, res) => {
+  try {
+    if (!dbConnected) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const problem = await Problem.findByIdAndDelete(req.params.id);
+
+    if (!problem) {
+      return res.status(404).json({ error: 'Problem not found' });
+    }
+
+    res.json({ message: 'Problem deleted successfully' });
+  } catch (error) {
+    console.error('❌ Error deleting problem:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get problems count (for debugging)
+app.get('/api/problems/count', authenticateToken, async (req, res) => {
+  try {
+    if (!dbConnected) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const count = await Problem.countDocuments();
+
+    res.json({
+      count,
+      message: `Found ${count} problems in database`
+    });
+  } catch (error) {
+    console.error('❌ Error counting problems:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled error:', err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Start server
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
-  console.log('✅ Ready for Railway deployment');
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`⏱️  Startup time: ${process.uptime()}s`);
+  console.log('🔗 Health check: /health');
+  console.log('🔗 Railway health: /railway/health');
+
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    console.log('✅ Railway deployment ready');
+  }
 });
 
-// Handle shutdown
+// Graceful shutdown
 process.on('SIGTERM', () => {
+  console.log('🛑 Shutting down gracefully');
   server.close(() => {
-    process.exit(0);
+    console.log('✅ Server closed');
+    if (dbConnected) {
+      mongoose.connection.close(() => {
+        console.log('✅ Database connection closed');
+        process.exit(0);
+      });
+    } else {
+      process.exit(0);
+    }
   });
 });
