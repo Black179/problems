@@ -116,15 +116,36 @@ mongoose.connection.once('open', () => {
   createDefaultAdmin();
 });
 
-// Manual admin creation endpoint (for debugging)
-app.post('/api/admin/create', async (req, res) => {
+// Manual admin recreation endpoint (deletes and recreates admin)
+app.post('/api/admin/recreate', async (req, res) => {
   try {
-    console.log('🔧 Manual admin creation requested');
-    await createDefaultAdmin();
-    res.json({ message: 'Admin creation attempted. Check server logs.' });
+    console.log('🔄 Manual admin recreation requested');
+
+    // Delete existing admin
+    await Admin.deleteMany({ email: 'admin' });
+    console.log('🗑️ Existing admin user deleted');
+
+    // Create new admin
+    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
+    const admin = new Admin({
+      name: 'Administrator',
+      email: 'admin',
+      password: hashedPassword
+    });
+
+    await admin.save();
+    console.log('✅ New admin user created fresh');
+    console.log('Email: admin');
+    console.log('Password: SecureAdmin@2025');
+
+    res.json({
+      message: 'Admin user recreated successfully',
+      email: 'admin',
+      password: 'SecureAdmin@2025'
+    });
   } catch (error) {
-    console.error('Error in manual admin creation:', error);
-    res.status(500).json({ error: 'Failed to create admin' });
+    console.error('Error recreating admin:', error);
+    res.status(500).json({ error: 'Failed to recreate admin' });
   }
 });
 
