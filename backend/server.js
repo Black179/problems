@@ -97,21 +97,26 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Create default admin user
+// Create default admin user if it doesn't exist
 async function createDefaultAdmin() {
   try {
+    console.log('🔧 Creating default admin user...');
     const existingAdmin = await Admin.findOne({ email: 'admin' });
+
     if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
+      console.log('📝 No existing admin found, creating new one...');
+      const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 12); // Increased rounds for better security
       const admin = new Admin({
         name: 'Administrator',
         email: 'admin',
         password: hashedPassword
       });
       await admin.save();
-      console.log('✅ Default admin user created');
+      console.log('✅ Default admin user created successfully');
       console.log('Email: admin');
       console.log('Password: SecureAdmin@2025');
+    } else {
+      console.log('✅ Admin user already exists');
     }
   } catch (error) {
     console.error('❌ Error creating default admin:', error.message);
@@ -143,7 +148,7 @@ app.post('/api/admin/create', async (req, res) => {
     console.log('🗑️ Existing admin user deleted');
 
     // Create new admin
-    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
+    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 12); // Use same rounds as auto-creation
     const admin = new Admin({
       name: 'Administrator',
       email: 'admin',
