@@ -113,7 +113,7 @@ async function createDefaultAdmin() {
 
     if (!existingAdmin) {
       console.log('📝 No existing admin found, creating new one...');
-      const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 12); // Increased rounds for better security
+      const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10); // Consistent with manual creation
       const admin = new Admin({
         name: 'Administrator',
         email: 'admin',
@@ -151,12 +151,12 @@ app.post('/api/admin/create', async (req, res) => {
       return res.status(500).json({ error: 'Database not available' });
     }
 
-    // Delete existing admin
+    // Force delete any existing admin
     await Admin.deleteMany({ email: 'admin' });
-    console.log('🗑️ Existing admin user deleted');
+    console.log('🗑️ All existing admin users deleted');
 
-    // Create new admin
-    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 12); // Use same rounds as auto-creation
+    // Create new admin with bcrypt 10 rounds (for compatibility)
+    const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
     const admin = new Admin({
       name: 'Administrator',
       email: 'admin',
@@ -164,9 +164,10 @@ app.post('/api/admin/create', async (req, res) => {
     });
 
     await admin.save();
-    console.log('✅ New admin user created fresh');
+    console.log('✅ Fresh admin user created');
     console.log('Email: admin');
     console.log('Password: SecureAdmin@2025');
+    console.log('Hash rounds: 10');
 
     res.json({
       message: 'Admin user created successfully',
