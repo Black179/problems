@@ -5,10 +5,10 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
-    
-    // Verify token is still valid
-    verifyToken(token);
-    
+
+    // Note: Removed token verification call that was causing redirect loop
+    // Token verification happens on API requests instead
+
     // DOM Elements
     const submissionsTableBody = document.getElementById('submissionsTableBody');
     const filterField = document.getElementById('filterField');
@@ -24,27 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let fields = new Set();
     let currentPage = 1;
     const itemsPerPage = 10;
-    
-    // Verify token validity
-    async function verifyToken(token) {
-        try {
-            const response = await fetch('https://problems-production.up.railway.app/api/admin/verify', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Invalid token');
-            }
-        } catch (error) {
-            console.error('Token verification failed:', error);
-            localStorage.removeItem('adminToken');
-            sessionStorage.removeItem('adminToken');
-            window.location.href = 'login.html';
-        }
-    }
     
     // Get token for API requests
     function getAuthHeader() {
