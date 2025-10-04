@@ -163,26 +163,22 @@ app.post('/api/problems', async (req, res) => {
   try {
     const { name, contactNo, status, problem, field, problemType, urgency, whenStarted, solutionsTried, expectedOutcome } = req.body;
 
-    // Validation
-    if (!name || !contactNo || !status || !problem || !field) {
-      return res.status(400).json({ error: 'All required fields must be filled' });
-    }
-
-    if (!['Working', 'Student', 'Neither'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status value' });
+    // Validation - Only name, contact, and problem are required
+    if (!name || !contactNo || !problem) {
+      return res.status(400).json({ error: 'Name, contact number, and problem description are required' });
     }
 
     const newProblem = new Problem({
       name,
       contactNo,
-      status,
+      status: status || 'Neither', // Default to 'Neither' if not provided
       problem,
-      field,
-      problemType,
-      urgency,
-      whenStarted,
-      solutionsTried,
-      expectedOutcome
+      field: field || '',
+      problemType: problemType || '',
+      urgency: urgency || '',
+      whenStarted: whenStarted || '',
+      solutionsTried: solutionsTried || '',
+      expectedOutcome: expectedOutcome || ''
     });
 
     console.log('💾 Saving problem to database:', newProblem.name);
