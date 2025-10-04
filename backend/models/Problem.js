@@ -24,8 +24,9 @@ const problemSchema = new mongoose.Schema({
   },
   field: {
     type: String,
-    required: [true, 'Field is required'],
-    trim: true
+    required: false, // Made optional
+    trim: true,
+    default: ''
   },
   problemType: {
     type: String,
