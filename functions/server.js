@@ -48,88 +48,125 @@ function authenticateToken(token) {
 
 // Admin login
 async function adminLogin(event, context) {
-  return new Promise((resolve, reject) => {
-    const { email, password } = JSON.parse(event.body);
+  return new Promise(async (resolve, reject) => {
+    try {
+      console.log('Admin login attempt received');
+      const { email, password } = JSON.parse(event.body);
+      console.log('Email received:', email);
 
-    if (!email || !password) {
-      return resolve({
-        statusCode: 400,
+      if (!email || !password) {
+        console.log('Missing email or password');
+        return resolve({
+          statusCode: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+          },
+          body: JSON.stringify({ error: 'Email and password are required' })
+        });
+      }
+
+      // Initialize database first
+      await initializeDatabase();
+      console.log('Database initialized');
+
+      db.get('SELECT * FROM admins WHERE email = ?', [email], async (err, admin) => {
+        if (err) {
+          console.error('Database error:', err);
+          return resolve({
+            statusCode: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+            },
+            body: JSON.stringify({ error: 'Server error' })
+          });
+        }
+
+        console.log('Admin found in database:', !!admin);
+
+        if (!admin) {
+          console.log('Admin not found, creating default admin');
+          // Create default admin if not exists
+          const hashedPassword = await bcrypt.hash('N@veeN', 10);
+          db.run('INSERT INTO admins (email, password, name) VALUES (?, ?, ?)', ['naveen@problemtracker.com', hashedPassword, 'Administrator'], (err) => {
+            if (err) {
+              console.error('Error creating admin:', err);
+            } else {
+              console.log('Default admin created');
+            }
+          });
+
+          return resolve({
+            statusCode: 401,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+            },
+            body: JSON.stringify({ error: 'Invalid email or password' })
+          });
+        }
+
+        console.log('Comparing passwords...');
+        const validPassword = await bcrypt.compare(password, admin.password);
+        console.log('Password valid:', validPassword);
+
+        if (!validPassword) {
+          return resolve({
+            statusCode: 401,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+            },
+            body: JSON.stringify({ error: 'Invalid email or password' })
+          });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+          { id: admin.id, email: admin.email, name: admin.name },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        console.log('Login successful, token generated');
+        resolve({
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+          },
+          body: JSON.stringify({
+            message: 'Login successful',
+            token,
+            email: admin.email,
+            name: admin.name
+          })
+        });
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      resolve({
+        statusCode: 500,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
         },
-        body: JSON.stringify({ error: 'Email and password are required' })
+        body: JSON.stringify({ error: 'Server error' })
       });
     }
-
-    db.get('SELECT * FROM admins WHERE email = ?', [email], async (err, admin) => {
-      if (err) {
-        console.error('Error finding admin:', err);
-        return resolve({
-          statusCode: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-          },
-          body: JSON.stringify({ error: 'Server error' })
-        });
-      }
-
-      if (!admin) {
-        return resolve({
-          statusCode: 401,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-          },
-          body: JSON.stringify({ error: 'Invalid email or password' })
-        });
-      }
-
-      const validPassword = await bcrypt.compare(password, admin.password);
-
-      if (!validPassword) {
-        return resolve({
-          statusCode: 401,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-          },
-          body: JSON.stringify({ error: 'Invalid email or password' })
-        });
-      }
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { id: admin.id, email: admin.email, name: admin.name },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      resolve({
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-        },
-        body: JSON.stringify({
-          message: 'Login successful',
-          token,
-          email: admin.email,
-          name: admin.name
-        })
-      });
-    });
   });
 }
 
