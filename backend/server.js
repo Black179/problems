@@ -249,7 +249,7 @@ app.post('/api/admin/login', async (req, res) => {
     // Generate a test hash with the same password to compare
     const testHash = await bcrypt.hash('SecureAdmin@2025', 10);
     console.log('🔑 Test hash (first 10 chars):', testHash.substring(0, 10) + '...');
-    console.log('🔑 Stored hash matches test hash:', admin.password === testHash);
+    console.log('🔑 Stored hash matches test hash:', testHash === admin.password);
 
     const validPassword = await bcrypt.compare(password, admin.password);
     console.log('🔐 bcrypt.compare result:', validPassword);
