@@ -134,22 +134,36 @@ app.post('/api/admin/create', async (req, res) => {
 app.post('/api/admin/login', async (req, res) => {
   const { email, password } = req.body;
 
+  console.log('🔐 Admin login attempt for email:', email);
+
   if (!email || !password) {
+    console.log('❌ Missing email or password');
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
+    console.log('🔍 Looking for admin user in database...');
     const admin = await Admin.findOne({ email });
 
     if (!admin) {
+      console.log('❌ Admin user not found in database');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    console.log('✅ Admin user found, checking password...');
+    console.log('📧 Admin email:', admin.email);
+    console.log('🔑 Password length:', password.length);
+    console.log('🔑 Stored hash length:', admin.password.length);
 
     const validPassword = await bcrypt.compare(password, admin.password);
+    console.log('🔐 Password valid:', validPassword);
 
     if (!validPassword) {
+      console.log('❌ Invalid password provided');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    console.log('✅ Password correct, generating JWT token...');
 
     // Generate JWT token
     const token = jwt.sign(
@@ -158,6 +172,7 @@ app.post('/api/admin/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('✅ Login successful, token generated');
     res.json({
       message: 'Login successful',
       token,
@@ -165,8 +180,12 @@ app.post('/api/admin/login', async (req, res) => {
       name: admin.name
     });
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('❌ Error during login:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Server error',
+      details: error.message
+    });
   }
 });
 
