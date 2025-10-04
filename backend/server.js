@@ -31,34 +31,39 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
+// Connect to MongoDB with faster timeout
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/test', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-.then(() => {
+  serverSelectionTimeoutMS: 3000, // 3 second timeout (reduced)
+  socketTimeoutMS: 10000, // 10 second socket timeout
+  bufferCommands: false, // Disable mongoose buffering
+  bufferMaxEntries: 0, // Disable mongoose buffering
+}).then(() => {
   console.log('✅ Connected to MongoDB');
   console.log('📊 Database:', mongoose.connection.name);
-  console.log('🔗 Host:', mongoose.connection.host);
 
-  // Initialize default admin after successful connection
-  mongoose.connection.once('open', () => {
-    createDefaultAdmin();
-  });
-})
-.catch(err => {
-  console.error('❌ MongoDB connection error:', err);
-  console.error('Please check your MONGODB_URI environment variable');
-  process.exit(1); // Exit if MongoDB connection fails
+  // Initialize admin with timeout
+  console.log('🔗 Initializing admin user...');
+  setTimeout(async () => {
+    try {
+      await createDefaultAdmin();
+    } catch (error) {
+      console.error('❌ Admin initialization failed:', error.message);
+    }
+  }, 500);
+
+}).catch(err => {
+  console.error('❌ MongoDB connection failed:', err.message);
+  console.log('🚨 Starting server without database');
 });
 
-// JWT Authentication middleware
+// Authentication middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -84,6 +89,8 @@ async function createDefaultAdmin() {
       const hashedPassword = await bcrypt.hash('SecureAdmin@2025', 10);
       const admin = new Admin({
         name: 'Administrator',
+        email: 'admin',
+        password: hashedPassword
       });
       await admin.save();
       console.log('Default admin user created');
