@@ -19,18 +19,31 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Health check - responds immediately
+// Health check - responds immediately (for Railway monitoring)
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    version: '1.0.0'
+  });
+});
+
+// Railway health check endpoint
+app.get('/railway/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString()
   });
 });
 
 // Basic route - responds immediately
 app.get('/', (req, res) => {
-  res.json({ message: 'Problem Tracker API - Server is running fast!' });
+  res.json({
+    message: 'Problem Tracker API - Server is running!',
+    status: 'active',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Connect to MongoDB with fast timeout (don't wait for it)
@@ -41,7 +54,6 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 3000,
       socketTimeoutMS: 5000,
-      // Removed invalid buffer options
     });
     console.log('✅ MongoDB connected');
   } catch (error) {
@@ -58,6 +70,12 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`⏱️  Startup time: ${process.uptime()}s`);
   console.log('🔗 Health check: /health');
+  console.log('🔗 Railway health: /railway/health');
+
+  // Signal that server is ready (for Railway)
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    console.log('✅ Railway deployment ready');
+  }
 });
 
 // Graceful shutdown
@@ -65,6 +83,9 @@ process.on('SIGTERM', () => {
   console.log('🛑 Shutting down gracefully');
   server.close(() => {
     console.log('✅ Server closed');
-    process.exit(0);
+    mongoose.connection.close(() => {
+      console.log('✅ Database connection closed');
+      process.exit(0);
+    });
   });
 });
