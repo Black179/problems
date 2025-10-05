@@ -49,10 +49,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch submissions from the API
     async function fetchSubmissions() {
         try {
+            // Get fresh references to DOM elements to ensure they're available
+            const filterField = document.getElementById('filterField');
+            const filterStatus = document.getElementById('filterStatus');
+            const sortBy = document.getElementById('sortBy');
+
             const params = new URLSearchParams();
-            if (filterField.value) params.append('field', filterField.value);
-            if (filterStatus.value) params.append('status', filterStatus.value);
-            params.append('sortBy', sortBy.value);
+            if (filterField && filterField.value) params.append('field', filterField.value);
+            if (filterStatus && filterStatus.value) params.append('status', filterStatus.value);
+            if (sortBy) params.append('sortBy', sortBy.value);
             
             const response = await fetch(`https://problems-production.up.railway.app/api/problems?${params.toString()}`, {
                 headers: getAuthHeader()
@@ -77,7 +82,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error fetching submissions:', error);
-            submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
+            const submissionsTableBody = document.getElementById('submissionsTableBody');
+            if (submissionsTableBody) {
+                submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
+            }
         }
     }
     
@@ -85,6 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateFieldsList() {
         fields = new Set(submissions.map(sub => sub.field).filter(Boolean));
         const fieldSelect = document.getElementById('filterField');
+        if (!fieldSelect) return;
+        
         const currentValue = fieldSelect.value;
         
         // Clear and add default option
@@ -106,6 +116,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render the submissions table
     function renderTable() {
+        const submissionsTableBody = document.getElementById('submissionsTableBody');
+        if (!submissionsTableBody) return;
+
         if (submissions.length === 0) {
             submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center">No submissions found.</td></tr>';
             return;
@@ -170,6 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPagination() {
         const totalPages = Math.ceil(submissions.length / itemsPerPage);
         const pagination = document.getElementById('pagination');
+        if (!pagination) return;
         
         if (totalPages <= 1) {
             pagination.innerHTML = '';
@@ -370,17 +384,41 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set up event listeners
     function setupEventListeners() {
+        // Get DOM elements within the function to ensure they're available
+        const filterField = document.getElementById('filterField');
+        const filterStatus = document.getElementById('filterStatus');
+        const sortBy = document.getElementById('sortBy');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
         // Filter and sort controls
-        [filterField, filterStatus, sortBy].forEach(control => {
-            control.addEventListener('change', () => {
+        if (filterField) {
+            filterField.addEventListener('change', () => {
                 currentPage = 1; // Reset to first page when filters change
                 fetchSubmissions();
             });
-        });
+        }
+
+        if (filterStatus) {
+            filterStatus.addEventListener('change', () => {
+                currentPage = 1; // Reset to first page when filters change
+                fetchSubmissions();
+            });
+        }
+
+        if (sortBy) {
+            sortBy.addEventListener('change', () => {
+                currentPage = 1; // Reset to first page when filters change
+                fetchSubmissions();
+            });
+        }
         
         // Refresh button
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', fetchSubmissions);
+            refreshBtn.addEventListener('click', () => {
+                console.log('Refresh button clicked'); // Debug log
+                fetchSubmissions();
+            });
         }
         
         // Logout button
