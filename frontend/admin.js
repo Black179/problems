@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Note: Removed token verification call that was causing redirect loop
     // Token verification happens on API requests instead
 
-    // DOM Elements
+    // DOM Elements - moved inside DOMContentLoaded to ensure DOM is ready
     const submissionsTableBody = document.getElementById('submissionsTableBody');
     const filterField = document.getElementById('filterField');
     const filterStatus = document.getElementById('filterStatus');
@@ -387,6 +387,88 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
         }
+
+        // Setup touch/swipe functionality for mobile
+        setupTouchGestures();
+    }
+    
+    // Touch/Swipe gesture setup for mobile table scrolling
+    function setupTouchGestures() {
+        const tableContainer = document.querySelector('.table-responsive');
+        if (!tableContainer) return;
+
+        let startX = 0;
+        let startY = 0;
+        let isScrolling = false;
+
+        // Function to check if table is scrollable and update visual indicator
+        function updateScrollIndicator() {
+            const canScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
+            if (canScroll) {
+                tableContainer.classList.add('scrollable');
+            } else {
+                tableContainer.classList.remove('scrollable');
+            }
+        }
+
+        // Initial check
+        updateScrollIndicator();
+
+        // Update indicator when window resizes
+        window.addEventListener('resize', updateScrollIndicator);
+
+        // Update indicator after table content changes
+        const observer = new MutationObserver(updateScrollIndicator);
+        observer.observe(tableContainer, { childList: true, subtree: true });
+
+        // Touch start event
+        tableContainer.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isScrolling = false;
+        });
+
+        // Touch move event
+        tableContainer.addEventListener('touchmove', function(e) {
+            if (!startX || !startY) return;
+
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+
+            const diffX = startX - currentX;
+            const diffY = startY - currentY;
+
+            // If horizontal movement is greater than vertical, it's a swipe
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+                isScrolling = true;
+                // Prevent default to avoid page scroll
+                e.preventDefault();
+
+                // Calculate scroll amount (smooth scrolling)
+                const scrollAmount = diffX * 0.5;
+                tableContainer.scrollLeft += scrollAmount;
+
+                // Reset start position for continuous scrolling
+                startX = currentX;
+            }
+        });
+
+        // Touch end event
+        tableContainer.addEventListener('touchend', function(e) {
+            startX = 0;
+            startY = 0;
+
+            // Add momentum scrolling for better UX
+            if (isScrolling) {
+                // Optional: Add momentum scrolling effect
+                setTimeout(() => {
+                    isScrolling = false;
+                }, 100);
+            }
+        });
+
+        // Also enable native scrolling with enhanced smoothness
+        tableContainer.style.scrollBehavior = 'smooth';
     }
     
     // Helper function to escape HTML
