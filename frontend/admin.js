@@ -438,6 +438,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let startX = 0;
         let startY = 0;
         let isScrolling = false;
+        let lastX = 0;
+        let velocityX = 0;
+        let momentumId = null;
+        let isTracking = false;
 
         // Function to check if table is scrollable and update visual indicator
         function updateScrollIndicator() {
@@ -459,16 +463,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const observer = new MutationObserver(updateScrollIndicator);
         observer.observe(tableContainer, { childList: true, subtree: true });
 
+        // Momentum scrolling function
+        function applyMomentum() {
+            if (Math.abs(velocityX) < 0.1) {
+                velocityX = 0;
+                if (momentumId) {
+                    cancelAnimationFrame(momentumId);
+                    momentumId = null;
+                }
+                return;
+            }
+
+            tableContainer.scrollLeft += velocityX;
+            velocityX *= 0.95; // Friction
+
+            momentumId = requestAnimationFrame(applyMomentum);
+        }
+
         // Touch start event
         tableContainer.addEventListener('touchstart', function(e) {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
+            lastX = startX;
             isScrolling = false;
+            isTracking = true;
+            velocityX = 0;
+
+            // Cancel any existing momentum
+            if (momentumId) {
+                cancelAnimationFrame(momentumId);
+                momentumId = null;
+            }
         });
 
         // Touch move event
         tableContainer.addEventListener('touchmove', function(e) {
-            if (!startX || !startY) return;
+            if (!isTracking) return;
 
             const currentX = e.touches[0].clientX;
             const currentY = e.touches[0].clientY;
@@ -476,14 +506,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const diffX = startX - currentX;
             const diffY = startY - currentY;
 
+            // Calculate velocity for momentum
+            velocityX = (lastX - currentX) * 0.8;
+            lastX = currentX;
+
             // If horizontal movement is greater than vertical, it's a swipe
             if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
                 isScrolling = true;
                 // Prevent default to avoid page scroll
                 e.preventDefault();
 
-                // Calculate scroll amount (smooth scrolling)
-                const scrollAmount = diffX * 0.5;
+                // Smooth scroll with sensitivity adjustment
+                const scrollAmount = diffX * 0.7;
                 tableContainer.scrollLeft += scrollAmount;
 
                 // Reset start position for continuous scrolling
@@ -493,20 +527,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Touch end event
         tableContainer.addEventListener('touchend', function(e) {
-            startX = 0;
-            startY = 0;
+            isTracking = false;
 
-            // Add momentum scrolling for better UX
-            if (isScrolling) {
-                // Optional: Add momentum scrolling effect
-                setTimeout(() => {
-                    isScrolling = false;
-                }, 100);
+            if (isScrolling && Math.abs(velocityX) > 1) {
+                // Start momentum scrolling
+                applyMomentum();
             }
+
+            // Reset after a short delay
+            setTimeout(() => {
+                isScrolling = false;
+                startX = 0;
+                startY = 0;
+            }, 100);
         });
 
         // Also enable native scrolling with enhanced smoothness
         tableContainer.style.scrollBehavior = 'smooth';
+
+        // Add CSS for better touch responsiveness
+        tableContainer.style.touchAction = 'pan-x';
+        tableContainer.style.userSelect = 'none';
+        tableContainer.style.webkitUserSelect = 'none';
     }
     
     // Helper function to escape HTML
