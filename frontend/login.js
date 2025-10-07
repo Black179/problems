@@ -23,15 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
         errorMessage.classList.add('d-none');
         
         try {
-            const response = await fetch('https://problems-production.up.railway.app/api/admin/login', {
+            const response = await fetch('/.netlify/functions/server/api/admin/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    email, 
-                    password
-                })
+                body: JSON.stringify({ email, password })
             });
             
             const data = await response.json();

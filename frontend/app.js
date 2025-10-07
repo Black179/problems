@@ -6,6 +6,14 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Reset form validation
+            form.classList.add('was-validated');
+            
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                return;
+            }
+            
             try {
                 const problemData = {
                     name: document.getElementById('name').value.trim(),
@@ -20,13 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     expectedOutcome: document.getElementById('expectedOutcome')?.value.trim() || ''
                 };
                 
-                // Basic validation for required fields
-                if (!problemData.name || !problemData.contactNo || !problemData.problem) {
-                    alert('Please fill in all required fields: Name, Contact Number, and Problem Description');
-                    return;
-                }
-                
-                const response = await fetch('https://problems-production.up.railway.app/api/problems', {
+                const response = await fetch('/.netlify/functions/server/api/problems', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -35,11 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error('Failed to submit problem');
                 }
-                
-                const result = await response.json();
                 
                 // Show success message and reset form
                 successMessage.classList.remove('d-none');
@@ -53,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert(`Error: ${error.message}`);
+                alert('An error occurred while submitting the form. Please try again.');
             }
         });
     }

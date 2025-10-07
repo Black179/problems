@@ -5,11 +5,11 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
-
-    // Note: Removed token verification call that was causing redirect loop
-    // Token verification happens on API requests instead
-
-    // DOM Elements - moved inside DOMContentLoaded to ensure DOM is ready
+    
+    // Verify token is still valid
+    verifyToken(token);
+    
+    // DOM Elements
     const submissionsTableBody = document.getElementById('submissionsTableBody');
     const filterField = document.getElementById('filterField');
     const filterStatus = document.getElementById('filterStatus');
@@ -24,6 +24,26 @@ document.addEventListener('DOMContentLoaded', function() {
     let fields = new Set();
     let currentPage = 1;
     const itemsPerPage = 10;
+    
+    // Verify token validity
+    async function verifyToken(token) {
+        try {
+            const response = await fetch('/.netlify/functions/server/api/admin/verify', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Invalid token');
+            }
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            localStorage.removeItem('adminToken');
+            sessionStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        }
+    }
     
     // Get token for API requests
     function getAuthHeader() {
@@ -49,17 +69,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch submissions from the API
     async function fetchSubmissions() {
         try {
-            // Get fresh references to DOM elements to ensure they're available
-            const filterField = document.getElementById('filterField');
-            const filterStatus = document.getElementById('filterStatus');
-            const sortBy = document.getElementById('sortBy');
-
             const params = new URLSearchParams();
-            if (filterField && filterField.value) params.append('field', filterField.value);
-            if (filterStatus && filterStatus.value) params.append('status', filterStatus.value);
-            if (sortBy) params.append('sortBy', sortBy.value);
+            if (filterField.value) params.append('field', filterField.value);
+            if (filterStatus.value) params.append('status', filterStatus.value);
+            params.append('sortBy', sortBy.value);
             
-            const response = await fetch(`https://problems-production.up.railway.app/api/problems?${params.toString()}`, {
+            const response = await fetch(`/.netlify/functions/server/api/problems?${params.toString()}`, {
                 headers: getAuthHeader()
             });
             
@@ -82,10 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error fetching submissions:', error);
-            const submissionsTableBody = document.getElementById('submissionsTableBody');
-            if (submissionsTableBody) {
-                submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
-            }
+            submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
         }
     }
     
@@ -93,8 +105,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateFieldsList() {
         fields = new Set(submissions.map(sub => sub.field).filter(Boolean));
         const fieldSelect = document.getElementById('filterField');
-        if (!fieldSelect) return;
-        
         const currentValue = fieldSelect.value;
         
         // Clear and add default option
@@ -116,9 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render the submissions table
     function renderTable() {
-        const submissionsTableBody = document.getElementById('submissionsTableBody');
-        if (!submissionsTableBody) return;
-
         if (submissions.length === 0) {
             submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center">No submissions found.</td></tr>';
             return;
@@ -183,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPagination() {
         const totalPages = Math.ceil(submissions.length / itemsPerPage);
         const pagination = document.getElementById('pagination');
-        if (!pagination) return;
         
         if (totalPages <= 1) {
             pagination.innerHTML = '';
@@ -243,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleViewProblem(e) {
         const id = e.currentTarget.getAttribute('data-id');
         try {
-            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
+            const response = await fetch(`/.netlify/functions/server/api/problems/${id}`, {
                 headers: getAuthHeader()
             });
             
@@ -356,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = e.currentTarget.closest('tr');
         
         try {
-            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
+            const response = await fetch(`/.netlify/functions/server/api/problems/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
@@ -384,171 +390,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set up event listeners
     function setupEventListeners() {
-        // Get DOM elements within the function to ensure they're available
-        const filterField = document.getElementById('filterField');
-        const filterStatus = document.getElementById('filterStatus');
-        const sortBy = document.getElementById('sortBy');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-
         // Filter and sort controls
-        if (filterField) {
-            filterField.addEventListener('change', () => {
+        [filterField, filterStatus, sortBy].forEach(control => {
+            control.addEventListener('change', () => {
                 currentPage = 1; // Reset to first page when filters change
                 fetchSubmissions();
             });
-        }
-
-        if (filterStatus) {
-            filterStatus.addEventListener('change', () => {
-                currentPage = 1; // Reset to first page when filters change
-                fetchSubmissions();
-            });
-        }
-
-        if (sortBy) {
-            sortBy.addEventListener('change', () => {
-                currentPage = 1; // Reset to first page when filters change
-                fetchSubmissions();
-            });
-        }
+        });
         
         // Refresh button
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                console.log('Refresh button clicked'); // Debug log
-                fetchSubmissions();
-            });
+            refreshBtn.addEventListener('click', fetchSubmissions);
         }
         
         // Logout button
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
         }
-
-        // Setup touch/swipe functionality for mobile
-        setupTouchGestures();
-    }
-    
-    // Touch/Swipe gesture setup for mobile table scrolling
-    function setupTouchGestures() {
-        const tableContainer = document.querySelector('.table-responsive');
-        if (!tableContainer) return;
-
-        let startX = 0;
-        let startY = 0;
-        let isScrolling = false;
-        let lastX = 0;
-        let velocityX = 0;
-        let momentumId = null;
-        let isTracking = false;
-
-        // Function to check if table is scrollable and update visual indicator
-        function updateScrollIndicator() {
-            const canScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
-            if (canScroll) {
-                tableContainer.classList.add('scrollable');
-            } else {
-                tableContainer.classList.remove('scrollable');
-            }
-        }
-
-        // Initial check
-        updateScrollIndicator();
-
-        // Update indicator when window resizes
-        window.addEventListener('resize', updateScrollIndicator);
-
-        // Update indicator after table content changes
-        const observer = new MutationObserver(updateScrollIndicator);
-        observer.observe(tableContainer, { childList: true, subtree: true });
-
-        // Momentum scrolling function
-        function applyMomentum() {
-            if (Math.abs(velocityX) < 0.1) {
-                velocityX = 0;
-                if (momentumId) {
-                    cancelAnimationFrame(momentumId);
-                    momentumId = null;
-                }
-                return;
-            }
-
-            tableContainer.scrollLeft += velocityX;
-            velocityX *= 0.95; // Friction
-
-            momentumId = requestAnimationFrame(applyMomentum);
-        }
-
-        // Touch start event
-        tableContainer.addEventListener('touchstart', function(e) {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            lastX = startX;
-            isScrolling = false;
-            isTracking = true;
-            velocityX = 0;
-
-            // Cancel any existing momentum
-            if (momentumId) {
-                cancelAnimationFrame(momentumId);
-                momentumId = null;
-            }
-        });
-
-        // Touch move event
-        tableContainer.addEventListener('touchmove', function(e) {
-            if (!isTracking) return;
-
-            const currentX = e.touches[0].clientX;
-            const currentY = e.touches[0].clientY;
-
-            const diffX = startX - currentX;
-            const diffY = startY - currentY;
-
-            // Calculate velocity for momentum
-            velocityX = (lastX - currentX) * 0.8;
-            lastX = currentX;
-
-            // If horizontal movement is greater than vertical, it's a swipe
-            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
-                isScrolling = true;
-                // Prevent default to avoid page scroll
-                e.preventDefault();
-
-                // Smooth scroll with sensitivity adjustment
-                const scrollAmount = diffX * 0.7;
-                tableContainer.scrollLeft += scrollAmount;
-
-                // Reset start position for continuous scrolling
-                startX = currentX;
-            }
-        });
-
-        // Touch end event
-        tableContainer.addEventListener('touchend', function(e) {
-            isTracking = false;
-
-            if (isScrolling && Math.abs(velocityX) > 1) {
-                // Start momentum scrolling
-                applyMomentum();
-            }
-
-            // Reset after a short delay
-            setTimeout(() => {
-                isScrolling = false;
-                startX = 0;
-                startY = 0;
-            }, 100);
-        });
-
-        // Also enable native scrolling with enhanced smoothness
-        tableContainer.style.scrollBehavior = 'smooth';
-
-        // Add CSS for better touch responsiveness
-        tableContainer.style.touchAction = 'pan-x';
-        tableContainer.style.userSelect = 'none';
-        tableContainer.style.webkitUserSelect = 'none';
     }
     
     // Helper function to escape HTML
