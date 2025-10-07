@@ -17,13 +17,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoutBtn = document.getElementById('logoutBtn');
     const viewProblemModal = new bootstrap.Modal(document.getElementById('viewProblemModal'));
     const problemDetails = document.getElementById('problemDetails');
-    
+
     // State
     let submissions = [];
     let fields = new Set();
     let currentPage = 1;
     const itemsPerPage = 10;
-    
+
     // Get token for API requests
     function getAuthHeader() {
         const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
@@ -31,20 +31,20 @@ document.addEventListener('DOMContentLoaded', function() {
             'Authorization': `Bearer ${token}`
         };
     }
-    
+
     // Logout function
     function logout() {
         localStorage.removeItem('adminToken');
         sessionStorage.removeItem('adminToken');
         window.location.href = 'login.html';
     }
-    
+
     // Initialize the page
     async function init() {
         await fetchSubmissions();
         setupEventListeners();
     }
-    
+
     // Fetch submissions from the API
     async function fetchSubmissions() {
         try {
@@ -57,28 +57,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (filterField && filterField.value) params.append('field', filterField.value);
             if (filterStatus && filterStatus.value) params.append('status', filterStatus.value);
             if (sortBy) params.append('sortBy', sortBy.value);
-            
+
             const response = await fetch(`https://problems-production.up.railway.app/api/problems?${params.toString()}`, {
                 headers: getAuthHeader()
             });
-            
+
             if (response.status === 401 || response.status === 403) {
                 logout();
                 return;
             }
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch submissions');
             }
-            
+
             const data = await response.json();
             submissions = data.data || [];
-            
+
             // Extract unique fields for filter
             updateFieldsList();
             renderTable();
             renderPagination();
-            
+
         } catch (error) {
             console.error('Error fetching submissions:', error);
             const submissionsTableBody = document.getElementById('submissionsTableBody');
@@ -87,18 +87,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Update the fields dropdown with unique field values
     function updateFieldsList() {
         fields = new Set(submissions.map(sub => sub.field).filter(Boolean));
         const fieldSelect = document.getElementById('filterField');
         if (!fieldSelect) return;
-        
+
         const currentValue = fieldSelect.value;
-        
+
         // Clear and add default option
         fieldSelect.innerHTML = '<option value="">All Fields</option>';
-        
+
         // Add field options
         fields.forEach(field => {
             const option = document.createElement('option');
@@ -106,13 +106,13 @@ document.addEventListener('DOMContentLoaded', function() {
             option.textContent = field;
             fieldSelect.appendChild(option);
         });
-        
+
         // Restore previous selection if it still exists
         if (currentValue && Array.from(fields).includes(currentValue)) {
             fieldSelect.value = currentValue;
         }
     }
-    
+
     // Render the submissions table
     function renderTable() {
         const submissionsTableBody = document.getElementById('submissionsTableBody');
@@ -122,21 +122,21 @@ document.addEventListener('DOMContentLoaded', function() {
             submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center">No submissions found.</td></tr>';
             return;
         }
-        
+
         // Calculate pagination
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = Math.min(startIndex + itemsPerPage, submissions.length);
         const paginatedSubmissions = submissions.slice(startIndex, endIndex);
-        
+
         submissionsTableBody.innerHTML = '';
-        
+
         paginatedSubmissions.forEach(submission => {
             const row = document.createElement('tr');
             const date = new Date(submission.createdAt).toLocaleString();
-            const problemPreview = submission.problem.length > 50 
-                ? `${submission.problem.substring(0, 50)}...` 
+            const problemPreview = submission.problem.length > 50
+                ? `${submission.problem.substring(0, 50)}...`
                 : submission.problem;
-            
+
             // Create urgency badge
             const urgencyColors = {
                 'Low': 'success',
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Critical': 'danger'
             };
             const urgencyColor = urgencyColors[submission.urgency] || 'secondary';
-            
+
             row.innerHTML = `
                 <td>${escapeHtml(submission.name)}</td>
                 <td>${escapeHtml(submission.contactNo)}</td>
@@ -164,33 +164,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </td>
             `;
-            
+
             submissionsTableBody.appendChild(row);
         });
-        
+
         // Add event listeners to buttons
         document.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', handleViewProblem);
         });
-        
+
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', handleDeleteProblem);
         });
     }
-    
+
     // Render pagination controls
     function renderPagination() {
         const totalPages = Math.ceil(submissions.length / itemsPerPage);
         const pagination = document.getElementById('pagination');
         if (!pagination) return;
-        
+
         if (totalPages <= 1) {
             pagination.innerHTML = '';
             return;
         }
-        
+
         let html = '';
-        
+
         // Previous button
         html += `
             <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </a>
             </li>
         `;
-        
+
         // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             html += `
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </li>
             `;
         }
-        
+
         // Next button
         html += `
             <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
@@ -217,9 +217,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 </a>
             </li>
         `;
-        
+
         pagination.innerHTML = html;
-        
+
         // Add event listeners to pagination links
         document.querySelectorAll('.page-link').forEach(link => {
             link.addEventListener('click', function(e) {
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
+
     // Handle view problem button click
     async function handleViewProblem(e) {
         const id = e.currentTarget.getAttribute('data-id');
@@ -245,19 +245,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
                 headers: getAuthHeader()
             });
-            
+
             if (response.status === 401 || response.status === 403) {
                 logout();
                 return;
             }
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch problem details');
             }
-            
+
             const problem = await response.json();
             const date = new Date(problem.createdAt).toLocaleString();
-            
+
             const urgencyColors = {
                 'Low': 'success',
                 'Medium': 'warning',
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Critical': 'danger'
             };
             const urgencyColor = urgencyColors[problem.urgency] || 'secondary';
-            
+
             problemDetails.innerHTML = `
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p>${escapeHtml(problem.contactNo)}</p>
                     </div>
                 </div>
-                
+
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <h6><i class="bi bi-briefcase-fill"></i> Status</h6>
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p>${date}</p>
                     </div>
                 </div>
-                
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <h6><i class="bi bi-tag-fill"></i> Problem Type</h6>
@@ -303,21 +303,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p><span class="badge bg-${urgencyColor}">${escapeHtml(problem.urgency || 'Not specified')}</span></p>
                     </div>
                 </div>
-                
+
                 ${problem.whenStarted ? `
                 <div class="mb-3">
                     <h6><i class="bi bi-clock-fill"></i> When Started</h6>
                     <p>${escapeHtml(problem.whenStarted)}</p>
                 </div>
                 ` : ''}
-                
+
                 <div class="mb-3">
                     <h6><i class="bi bi-file-text-fill"></i> Problem Description</h6>
                     <div class="p-3 bg-light rounded">
                         ${escapeHtml(problem.problem).replace(/\n/g, '<br>')}
                     </div>
                 </div>
-                
+
                 ${problem.solutionsTried ? `
                 <div class="mb-3">
                     <h6><i class="bi bi-tools"></i> Solutions Tried</h6>
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
                 ` : ''}
-                
+
                 ${problem.expectedOutcome ? `
                 <div class="mb-3">
                     <h6><i class="bi bi-trophy-fill"></i> Expected Outcome</h6>
@@ -336,51 +336,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 ` : ''}
             `;
-            
+
             viewProblemModal.show();
-            
+
         } catch (error) {
             console.error('Error fetching problem details:', error);
             problemDetails.innerHTML = '<div class="alert alert-danger">Error loading problem details. Please try again.</div>';
         }
     }
-    
+
     // Handle delete problem button click
     async function handleDeleteProblem(e) {
         if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
             return;
         }
-        
+
         const id = e.currentTarget.getAttribute('data-id');
         const row = e.currentTarget.closest('tr');
-        
+
         try {
             const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
-            
+
             if (response.status === 401 || response.status === 403) {
                 logout();
                 return;
             }
-            
+
             if (!response.ok) {
                 throw new Error('Failed to delete submission');
             }
-            
+
             // Remove the row from the table
             row.remove();
-            
+
             // Refresh the data
             await fetchSubmissions();
-            
+
         } catch (error) {
             console.error('Error deleting submission:', error);
             alert('Failed to delete submission. Please try again.');
         }
     }
-    
+
     // Set up event listeners
     function setupEventListeners() {
         // Get DOM elements within the function to ensure they're available
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetchSubmissions();
             });
         }
-        
+
         // Logout button
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Setup touch/swipe functionality for mobile
         setupTouchGestures();
     }
-    
+
     // Touch/Swipe gesture setup for mobile table scrolling
     function setupTouchGestures() {
         const tableContainer = document.querySelector('.table-responsive');
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tableContainer.style.userSelect = 'none';
         tableContainer.style.webkitUserSelect = 'none';
     }
-    
+
     // Helper function to escape HTML
     function escapeHtml(unsafe) {
         if (unsafe === null || unsafe === undefined) return '';
@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
-    
+
     // Initialize the page
     init();
 });
