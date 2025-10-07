@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterField = document.getElementById('filterField');
     const filterStatus = document.getElementById('filterStatus');
     const sortBy = document.getElementById('sortBy');
-    const refreshBtn = document.getElementById('refreshBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const viewProblemModal = new bootstrap.Modal(document.getElementById('viewProblemModal'));
     const problemDetails = document.getElementById('problemDetails');
@@ -388,7 +387,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const filterField = document.getElementById('filterField');
         const filterStatus = document.getElementById('filterStatus');
         const sortBy = document.getElementById('sortBy');
-        const refreshBtn = document.getElementById('refreshBtn');
         const logoutBtn = document.getElementById('logoutBtn');
 
         // Filter and sort controls
@@ -409,14 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sortBy) {
             sortBy.addEventListener('change', () => {
                 currentPage = 1; // Reset to first page when filters change
-                fetchSubmissions();
-            });
-        }
-        
-        // Refresh button
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                console.log('Refresh button clicked'); // Debug log
                 fetchSubmissions();
             });
         }
