@@ -5,11 +5,19 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'login.html';
         return;
     }
+<<<<<<< HEAD
     
     // Verify token is still valid
     verifyToken(token);
     
     // DOM Elements
+=======
+
+    // Note: Removed token verification call that was causing redirect loop
+    // Token verification happens on API requests instead
+
+    // DOM Elements - moved inside DOMContentLoaded to ensure DOM is ready
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
     const submissionsTableBody = document.getElementById('submissionsTableBody');
     const filterField = document.getElementById('filterField');
     const filterStatus = document.getElementById('filterStatus');
@@ -25,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     const itemsPerPage = 10;
     
+<<<<<<< HEAD
     // Verify token validity
     async function verifyToken(token) {
         try {
@@ -45,6 +54,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+=======
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
     // Get token for API requests
     function getAuthHeader() {
         const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
@@ -69,12 +80,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch submissions from the API
     async function fetchSubmissions() {
         try {
+<<<<<<< HEAD
             const params = new URLSearchParams();
             if (filterField.value) params.append('field', filterField.value);
             if (filterStatus.value) params.append('status', filterStatus.value);
             params.append('sortBy', sortBy.value);
             
             const response = await fetch(`/.netlify/functions/server/api/problems?${params.toString()}`, {
+=======
+            // Get fresh references to DOM elements to ensure they're available
+            const filterField = document.getElementById('filterField');
+            const filterStatus = document.getElementById('filterStatus');
+            const sortBy = document.getElementById('sortBy');
+
+            const params = new URLSearchParams();
+            if (filterField && filterField.value) params.append('field', filterField.value);
+            if (filterStatus && filterStatus.value) params.append('status', filterStatus.value);
+            if (sortBy) params.append('sortBy', sortBy.value);
+            
+            const response = await fetch(`https://problems-production.up.railway.app/api/problems?${params.toString()}`, {
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
                 headers: getAuthHeader()
             });
             
@@ -97,7 +122,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error fetching submissions:', error);
+<<<<<<< HEAD
             submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
+=======
+            const submissionsTableBody = document.getElementById('submissionsTableBody');
+            if (submissionsTableBody) {
+                submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
+            }
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
         }
     }
     
@@ -105,6 +137,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateFieldsList() {
         fields = new Set(submissions.map(sub => sub.field).filter(Boolean));
         const fieldSelect = document.getElementById('filterField');
+<<<<<<< HEAD
+=======
+        if (!fieldSelect) return;
+        
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
         const currentValue = fieldSelect.value;
         
         // Clear and add default option
@@ -126,6 +163,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Render the submissions table
     function renderTable() {
+<<<<<<< HEAD
+=======
+        const submissionsTableBody = document.getElementById('submissionsTableBody');
+        if (!submissionsTableBody) return;
+
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
         if (submissions.length === 0) {
             submissionsTableBody.innerHTML = '<tr><td colspan="9" class="text-center">No submissions found.</td></tr>';
             return;
@@ -190,6 +233,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPagination() {
         const totalPages = Math.ceil(submissions.length / itemsPerPage);
         const pagination = document.getElementById('pagination');
+<<<<<<< HEAD
+=======
+        if (!pagination) return;
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
         
         if (totalPages <= 1) {
             pagination.innerHTML = '';
@@ -249,7 +296,11 @@ document.addEventListener('DOMContentLoaded', function() {
     async function handleViewProblem(e) {
         const id = e.currentTarget.getAttribute('data-id');
         try {
+<<<<<<< HEAD
             const response = await fetch(`/.netlify/functions/server/api/problems/${id}`, {
+=======
+            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
                 headers: getAuthHeader()
             });
             
@@ -362,7 +413,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = e.currentTarget.closest('tr');
         
         try {
+<<<<<<< HEAD
             const response = await fetch(`/.netlify/functions/server/api/problems/${id}`, {
+=======
+            const response = await fetch(`https://problems-production.up.railway.app/api/problems/${id}`, {
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
@@ -390,6 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set up event listeners
     function setupEventListeners() {
+<<<<<<< HEAD
         // Filter and sort controls
         [filterField, filterStatus, sortBy].forEach(control => {
             control.addEventListener('change', () => {
@@ -401,12 +457,176 @@ document.addEventListener('DOMContentLoaded', function() {
         // Refresh button
         if (refreshBtn) {
             refreshBtn.addEventListener('click', fetchSubmissions);
+=======
+        // Get DOM elements within the function to ensure they're available
+        const filterField = document.getElementById('filterField');
+        const filterStatus = document.getElementById('filterStatus');
+        const sortBy = document.getElementById('sortBy');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Filter and sort controls
+        if (filterField) {
+            filterField.addEventListener('change', () => {
+                currentPage = 1; // Reset to first page when filters change
+                fetchSubmissions();
+            });
+        }
+
+        if (filterStatus) {
+            filterStatus.addEventListener('change', () => {
+                currentPage = 1; // Reset to first page when filters change
+                fetchSubmissions();
+            });
+        }
+
+        if (sortBy) {
+            sortBy.addEventListener('change', () => {
+                currentPage = 1; // Reset to first page when filters change
+                fetchSubmissions();
+            });
+        }
+        
+        // Refresh button
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                console.log('Refresh button clicked'); // Debug log
+                fetchSubmissions();
+            });
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
         }
         
         // Logout button
         if (logoutBtn) {
             logoutBtn.addEventListener('click', logout);
         }
+<<<<<<< HEAD
+=======
+
+        // Setup touch/swipe functionality for mobile
+        setupTouchGestures();
+    }
+    
+    // Touch/Swipe gesture setup for mobile table scrolling
+    function setupTouchGestures() {
+        const tableContainer = document.querySelector('.table-responsive');
+        if (!tableContainer) return;
+
+        let startX = 0;
+        let startY = 0;
+        let isScrolling = false;
+        let lastX = 0;
+        let velocityX = 0;
+        let momentumId = null;
+        let isTracking = false;
+
+        // Function to check if table is scrollable and update visual indicator
+        function updateScrollIndicator() {
+            const canScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
+            if (canScroll) {
+                tableContainer.classList.add('scrollable');
+            } else {
+                tableContainer.classList.remove('scrollable');
+            }
+        }
+
+        // Initial check
+        updateScrollIndicator();
+
+        // Update indicator when window resizes
+        window.addEventListener('resize', updateScrollIndicator);
+
+        // Update indicator after table content changes
+        const observer = new MutationObserver(updateScrollIndicator);
+        observer.observe(tableContainer, { childList: true, subtree: true });
+
+        // Momentum scrolling function
+        function applyMomentum() {
+            if (Math.abs(velocityX) < 0.1) {
+                velocityX = 0;
+                if (momentumId) {
+                    cancelAnimationFrame(momentumId);
+                    momentumId = null;
+                }
+                return;
+            }
+
+            tableContainer.scrollLeft += velocityX;
+            velocityX *= 0.95; // Friction
+
+            momentumId = requestAnimationFrame(applyMomentum);
+        }
+
+        // Touch start event
+        tableContainer.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            lastX = startX;
+            isScrolling = false;
+            isTracking = true;
+            velocityX = 0;
+
+            // Cancel any existing momentum
+            if (momentumId) {
+                cancelAnimationFrame(momentumId);
+                momentumId = null;
+            }
+        });
+
+        // Touch move event
+        tableContainer.addEventListener('touchmove', function(e) {
+            if (!isTracking) return;
+
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+
+            const diffX = startX - currentX;
+            const diffY = startY - currentY;
+
+            // Calculate velocity for momentum
+            velocityX = (lastX - currentX) * 0.8;
+            lastX = currentX;
+
+            // If horizontal movement is greater than vertical, it's a swipe
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+                isScrolling = true;
+                // Prevent default to avoid page scroll
+                e.preventDefault();
+
+                // Smooth scroll with sensitivity adjustment
+                const scrollAmount = diffX * 0.7;
+                tableContainer.scrollLeft += scrollAmount;
+
+                // Reset start position for continuous scrolling
+                startX = currentX;
+            }
+        });
+
+        // Touch end event
+        tableContainer.addEventListener('touchend', function(e) {
+            isTracking = false;
+
+            if (isScrolling && Math.abs(velocityX) > 1) {
+                // Start momentum scrolling
+                applyMomentum();
+            }
+
+            // Reset after a short delay
+            setTimeout(() => {
+                isScrolling = false;
+                startX = 0;
+                startY = 0;
+            }, 100);
+        });
+
+        // Also enable native scrolling with enhanced smoothness
+        tableContainer.style.scrollBehavior = 'smooth';
+
+        // Add CSS for better touch responsiveness
+        tableContainer.style.touchAction = 'pan-x';
+        tableContainer.style.userSelect = 'none';
+        tableContainer.style.webkitUserSelect = 'none';
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
     }
     
     // Helper function to escape HTML
