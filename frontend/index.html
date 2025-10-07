@@ -6,19 +6,12 @@
     <title>Problem Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <!-- Animated Particles Background -->
-    <div class="particles" id="particles"></div>
-    
     <!-- Admin Login Link -->
     <div style="position: fixed; top: 20px; right: 20px; z-index: 100;">
         <a href="login.html" class="btn btn-outline-light">
             <i class="bi bi-shield-lock"></i> Admin Login
         </a>
     </div>
-    
     <!-- Welcome Landing Section -->
     <section class="welcome-section" id="welcomeSection">
         <div class="welcome-content">
@@ -78,6 +71,35 @@
             }
         }
         
+        // Swipe functionality for mobile navigation
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            startTime = Date.now();
+        }, { passive: true });
+        
+        document.addEventListener('touchend', function(e) {
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const endTime = Date.now();
+            
+            const deltaX = endX - startX;
+            const deltaY = endY - startY;
+            const deltaTime = endTime - startTime;
+            
+            // Check if it's a swipe (minimum distance and speed)
+            if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 200 && deltaTime < 1000) {
+                // Check if horizontal swipe is dominant
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Navigate to form page on swipe
+                    window.location.href = 'form.html';
+                }
+            }
+        }, { passive: true });
         createParticles();
     </script>
 </body>

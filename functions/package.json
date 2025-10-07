@@ -4,6 +4,10 @@
   "description": "Serverless functions for Problem Tracker Application",
   "main": "server.js",
   "scripts": {
+<<<<<<< HEAD
+=======
+    "start": "node backend/server.js",
+>>>>>>> a1520dc61de03cbf031e921fd063977509ad753c
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

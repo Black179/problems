@@ -421,7 +421,7 @@ body {
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-/* Admin page styles */
+/* Admin page styles - Mobile responsiveness improvements */
 .table-responsive {
     margin-top: 20px;
     border-radius: 15px;
@@ -559,4 +559,133 @@ body {
     background: linear-gradient(135deg, #667eea, #764ba2);
     border-color: #667eea;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+    /* Table responsiveness */
+    .table-responsive {
+        font-size: 0.875rem;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        scrollbar-width: thin; /* Firefox scrollbar */
+    }
+
+    /* Custom scrollbar for webkit browsers */
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 3px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #764ba2;
+    }
+
+    /* Scroll indicator gradients for mobile */
+    .table-responsive::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 30px;
+        height: 100%;
+        background: linear-gradient(to left, rgba(255,255,255,0.8), transparent);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .table-responsive.scrollable::after {
+        opacity: 1;
+    }
+
+    .table {
+        min-width: 600px; /* Ensure table is wide enough for scrolling */
+        margin-bottom: 0;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+        white-space: nowrap; /* Prevent text wrapping */
+    }
+
+    /* Show all columns but make them scrollable */
+    .table th:nth-child(4), /* Field column */
+    .table td:nth-child(4),
+    .table th:nth-child(5), /* Type column */
+    .table td:nth-child(5),
+    .table th:nth-child(6), /* Urgency column */
+    .table td:nth-child(6),
+    .table th:nth-child(7), /* Problem description column */
+    .table td:nth-child(7),
+    .table th:nth-child(8), /* Submitted date column */
+    .table td:nth-child(8) {
+        display: table-cell !important; /* Override previous hiding */
+    }
+
+    /* Make action buttons stack vertically and not wrap */
+    .table td:nth-child(9) {
+        white-space: nowrap;
+        min-width: 120px;
+    }
+
+    .table td:nth-child(9) .btn {
+        margin-bottom: 2px;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+
+    /* Filter controls improvements */
+    .card-body .row > div {
+        margin-bottom: 15px;
+    }
+
+    /* Make filter selects full width on mobile */
+    #filterField, #filterStatus, #sortBy {
+        width: 100%;
+    }
+
+    /* Better spacing for filter cards on mobile */
+    .card-body .row {
+        margin-bottom: 0;
+    }
+
+
+@media (max-width: 576px) {
+    /* Extra small screens - make table even more compact but keep scrolling */
+    .table {
+        min-width: 500px;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 6px 4px;
+        font-size: 0.75rem;
+    }
+    /* Smaller buttons */
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+}
+/* Navbar responsiveness */
+@media (max-width: 768px) {
+    .navbar-nav {
+        text-align: center;
+    }
+
+    .navbar .btn {
+        margin-top: 5px;
+        font-size: 0.875rem;
+        padding: 8px 16px;
+    }
 }
