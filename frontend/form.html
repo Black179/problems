@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Problem - Problem Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Animated Particles Background -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Admin Login Link -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 100;">
+        <a href="login.html" class="btn btn-outline-light">
+            <i class="bi bi-shield-lock"></i> Admin Login
+        </a>
+    </div>
+    
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="text-center">Problem Submission Form</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="problemForm">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" required>
+                                <div class="invalid-feedback">Please enter your name.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="contactNo" class="form-label">Contact Number <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="contactNo" required>
+                                <div class="invalid-feedback">Please enter a valid contact number.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status">
+                                    <option value="" selected disabled>Select your status</option>
+                                    <option value="Working">Working Professional</option>
+                                    <option value="Student">Student</option>
+                                    <option value="Neither">Neither</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="field" class="form-label">Field/Area</label>
+                                <select class="form-select" id="field">
+                                    <option value="" selected disabled>Select your field</option>
+                                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                                    <option value="Electrical Engineering">Electrical Engineering</option>
+                                    <option value="Civil Engineering">Civil Engineering</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Information Technology">Information Technology</option>
+                                    <option value="Electronics & Communication">Electronics & Communication</option>
+                                    <option value="Chemical Engineering">Chemical Engineering</option>
+                                    <option value="Automobile Engineering">Automobile Engineering</option>
+                                    <option value="Biotechnology">Biotechnology</option>
+                                    <option value="Aerospace Engineering">Aerospace Engineering</option>
+                                    <option value="Software Development">Software Development</option>
+                                    <option value="Data Science">Data Science</option>
+                                    <option value="Artificial Intelligence">Artificial Intelligence</option>
+                                    <option value="Cybersecurity">Cybersecurity</option>
+                                    <option value="Web Development">Web Development</option>
+                                    <option value="Mobile App Development">Mobile App Development</option>
+                                    <option value="Business Management">Business Management</option>
+                                    <option value="Finance & Accounting">Finance & Accounting</option>
+                                    <option value="Marketing & Sales">Marketing & Sales</option>
+                                    <option value="Human Resources">Human Resources</option>
+                                    <option value="Healthcare & Medicine">Healthcare & Medicine</option>
+                                    <option value="Education & Training">Education & Training</option>
+                                    <option value="Law & Legal Services">Law & Legal Services</option>
+                                    <option value="Design & Creative Arts">Design & Creative Arts</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="problemType" class="form-label">Problem Type</label>
+                                <select class="form-select" id="problemType">
+                                    <option value="" selected disabled>Select problem type</option>
+                                    <option value="Technical Issue">💻 Technical Issue</option>
+                                    <option value="Project Management">📊 Project Management</option>
+                                    <option value="Career Guidance">🎯 Career Guidance</option>
+                                    <option value="Academic Challenge">📚 Academic Challenge</option>
+                                    <option value="Learning Difficulty">🧠 Learning Difficulty</option>
+                                    <option value="Tool/Software Issue">🔧 Tool/Software Issue</option>
+                                    <option value="Team Collaboration">👥 Team Collaboration</option>
+                                    <option value="Resource Access">📦 Resource Access</option>
+                                    <option value="Skill Development">⚡ Skill Development</option>
+                                    <option value="Time Management">⏰ Time Management</option>
+                                    <option value="Communication Issue">💬 Communication Issue</option>
+                                    <option value="Decision Making">🤔 Decision Making</option>
+                                    <option value="Other">❓ Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="urgency" class="form-label">Urgency Level</label>
+                                <select class="form-select" id="urgency">
+                                    <option value="" selected disabled>Select urgency level</option>
+                                    <option value="Low">🟢 Low - Can wait a few days</option>
+                                    <option value="Medium">🟡 Medium - Need response within 24-48 hours</option>
+                                    <option value="High">🟠 High - Need response today</option>
+                                    <option value="Critical">🔴 Critical - Urgent, blocking my work</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="problem" class="form-label">Describe Your Problem <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="problem" rows="4" required placeholder="Please provide a detailed description of your problem..."></textarea>
+                                <div class="invalid-feedback">Please describe your problem.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="whenStarted" class="form-label">When did this problem start?</label>
+                                <select class="form-select" id="whenStarted">
+                                    <option value="" selected disabled>Select timeframe</option>
+                                    <option value="Today">Today</option>
+                                    <option value="This Week">This Week</option>
+                                    <option value="This Month">This Month</option>
+                                    <option value="A Few Months Ago">A Few Months Ago</option>
+                                    <option value="More than 6 Months">More than 6 Months</option>
+                                    <option value="Not Sure">Not Sure</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="solutionsTried" class="form-label">Have you tried any solutions?</label>
+                                <textarea class="form-control" id="solutionsTried" rows="3" placeholder="e.g., Searched online, asked colleagues, tried different approaches..."></textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="expectedOutcome" class="form-label">What would a successful solution look like?</label>
+                                <textarea class="form-control" id="expectedOutcome" rows="3" placeholder="Describe your ideal outcome or what you hope to achieve..."></textarea>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Submit Problem</button>
+                                <a href="index.html" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left"></i> Back to Home
+                                </a>
+                            </div>
+                        </form>
+                        
+                        <div id="successMessage" class="alert alert-success mt-3 d-none">
+                            Problem submitted successfully!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 5 + 2;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 15 + 10) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        createParticles();
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
